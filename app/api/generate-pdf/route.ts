@@ -45,8 +45,9 @@ export async function POST(req: Request) {
 
   const pdfBuffer = await pdfPromise;
 
-  // Convert Buffer to Blob for NextResponse
-  const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
+  // Convert Buffer to Uint8Array for Blob
+  const pdfArray = new Uint8Array(pdfBuffer);
+  const pdfBlob = new Blob([pdfArray], { type: "application/pdf" });
 
   return new NextResponse(pdfBlob, {
     status: 200,
