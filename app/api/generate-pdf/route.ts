@@ -53,22 +53,6 @@ export async function POST(req: Request) {
       yPosition -= 20; // Adjust spacing
     });
 
-    // Add photo if provided
-    if (data.photo) {
-      try {
-        const imageBytes = Buffer.from(data.photo.split(",")[1], "base64");
-        const image = await pdfDoc.embedJpg(imageBytes); // Assume JPG; change to embedPng if PNG
-        page.drawImage(image, {
-          x: width - 150,
-          y: height - 150,
-          width: 100,
-          height: 100,
-        });
-      } catch (imageError) {
-        console.error("Image processing error:", imageError);
-      }
-    }
-
     // Serialize the PDFDocument to bytes (a Uint8Array)
     const pdfBytes = await pdfDoc.save();
 
