@@ -1,48 +1,81 @@
 import { NextResponse } from "next/server";
-import PDFDocument from "pdfkit";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 export async function POST(req: Request) {
   const data = await req.json();
-  console.log("Received data:", JSON.stringify(data).substring(0, 100) + "..."); // Log truncated data
+  console.log("Received data:", JSON.stringify(data).substring(0, 100) + "...");
 
   try {
-    const doc = new PDFDocument({ margin: 50 });
+    // Create a new PDFDocument
+    const pdfDoc = await PDFDocument.create();
+    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
-    // Collect PDF data into a buffer
-    const buffers: Buffer[] = [];
-    doc.on("data", (chunk) => buffers.push(chunk));
-    const pdfPromise = new Promise<Buffer>((resolve, reject) => {
-      doc.on("end", () => {
-        const pdfBuffer = Buffer.concat(buffers);
-        resolve(pdfBuffer);
-      });
-      doc.on("error", (error) => reject(error));
+    // Add a blank page to the document
+    const page = pdfDoc.addPage([550, 750]);
+    const { width, height } = page.getSize();
+    const fontSize = 12;
+
+    // Add title
+    page.drawText("Biodata", {
+      x: width / 2 - 50,
+      y: height - 50,
+      size: 25,
+      font: timesRomanFont,
+      color: rgb(0, 0, 0),
     });
 
-    // Add content to PDF (photo disabled temporarily)
-    doc.fontSize(25).text("Biodata", { align: "center" });
-    doc.moveDown();
-    doc.fontSize(12).text(`Full Name: ${data.name || "N/A"}`);
-    doc.text(`Date of Birth: ${data.dob || "N/A"}`);
-    doc.text(`Place of Birth: ${data.placeOfBirth || "N/A"}`);
-    doc.text(`Height: ${data.height || "N/A"}`);
-    doc.text(`Education: ${data.education || "N/A"}`);
-    doc.text(`Occupation: ${data.occupation || "N/A"}`);
-    doc.text(`Father's Name: ${data.fatherName || "N/A"}`);
-    doc.text(`Mother's Name: ${data.motherName || "N/A"}`);
-    doc.text(`Siblings: ${data.siblings || "N/A"}`);
-    doc.text(`Contact Number: ${data.contact || "N/A"}`);
-    doc.text(`Address: ${data.address || "N/A"}`);
+    let yPosition = height - 100;
 
-    doc.end();
+    // Add text fields
+    const fields = [
+      `Full Name: ${data.name || "N/A"}`,
+      `Date of Birth: ${data.dob || "N/A"}`,
+      `Place of Birth: ${data.placeOfBirth || "N/A"}`,
+      `Height: ${data.height || "N/A"}`,
+      `Education: ${data.education || "N/A"}`,
+      `Occupation: ${data.occupation || "N/A"}`,
+      `Father's Name: ${data.fatherName || "N/A"}`,
+      `Mother's Name: ${data.motherName || "N/A"}`,
+      `Siblings: ${data.siblings || "N/A"}`,
+      `Contact Number: ${data.contact || "N/A"}`,
+      `Address: ${data.address || "N/A"}`,
+    ];
 
-    const pdfBuffer = await pdfPromise;
+    fields.forEach((field) => {
+      page.drawText(field, {
+        x: 50,
+        y: yPosition,
+        size: fontSize,
+        font: timesRomanFont,
+        color: rgb(0, 0, 0),
+        maxWidth: width - 100,
+      });
+      yPosition -= 20; // Adjust spacing
+    });
 
-    // Convert Buffer to Uint8Array for Blob
-    const pdfArray = new Uint8Array(pdfBuffer);
-    const pdfBlob = new Blob([pdfArray], { type: "application/pdf" });
+    // Add photo if provided
+    if (data.photo) {
+      try {
+        const imageBytes = Buffer.from(data.photo.split(",")[1], "base64");
+        const image = await pdfDoc.embedJpg(imageBytes); // Assume JPG; change to embedPng if PNG
+        page.drawImage(image, {
+          x: width - 150,
+          y: height - 150,
+          width: 100,
+          height: 100,
+        });
+      } catch (imageError) {
+        console.error("Image processing error:", imageError);
+      }
+    }
 
-    console.log("PDF generated successfully, size:", pdfBuffer.length);
+    // Serialize the PDFDocument to bytes (a Uint8Array)
+    const pdfBytes = await pdfDoc.save();
+
+    // Convert to Blob
+    const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+
+    console.log("PDF generated successfully, size:", pdfBytes.length);
     return new NextResponse(pdfBlob, {
       status: 200,
       headers: {
