@@ -45,7 +45,10 @@ export async function POST(req: Request) {
 
   const pdfBuffer = await pdfPromise;
 
-  return new NextResponse(pdfBuffer, {
+  // Convert Buffer to Blob for NextResponse
+  const pdfBlob = new Blob([pdfBuffer], { type: "application/pdf" });
+
+  return new NextResponse(pdfBlob, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
