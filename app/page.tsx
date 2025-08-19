@@ -3,36 +3,22 @@
 import { useState } from "react";
 
 export default function Home() {
-  const [formData, setFormData] = useState({
-    name: "",
-    dob: "",
-    placeOfBirth: "",
-    height: "",
-    education: "",
-    occupation: "",
-    fatherName: "",
-    motherName: "",
-    siblings: "",
-    contact: "",
-    address: "",
-  });
+  const [formData, setFormData] = useState({ name: "" });
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ name: e.target.value });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const data = { ...formData }; // No photo included
-
     try {
       const response = await fetch("/api/generate-pdf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
@@ -62,37 +48,6 @@ export default function Home() {
       <form onSubmit={handleSubmit}>
         <label>Full Name:</label>
         <input type="text" name="name" value={formData.name} onChange={handleChange} required />
-
-        <label>Date of Birth:</label>
-        <input type="date" name="dob" value={formData.dob} onChange={handleChange} required />
-
-        <label>Place of Birth:</label>
-        <input type="text" name="placeOfBirth" value={formData.placeOfBirth} onChange={handleChange} />
-
-        <label>Height (e.g., 5'6"):</label>
-        <input type="text" name="height" value={formData.height} onChange={handleChange} />
-
-        <label>Education:</label>
-        <input type="text" name="education" value={formData.education} onChange={handleChange} />
-
-        <label>Occupation:</label>
-        <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} />
-
-        <label>Father's Name:</label>
-        <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} />
-
-        <label>Mother's Name:</label>
-        <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} />
-
-        <label>Siblings (e.g., 1 brother, 2 sisters):</label>
-        <input type="text" name="siblings" value={formData.siblings} onChange={handleChange} />
-
-        <label>Contact Number:</label>
-        <input type="tel" name="contact" value={formData.contact} onChange={handleChange} />
-
-        <label>Address:</label>
-        <textarea name="address" value={formData.address} onChange={handleChange} />
-
         <button type="submit" disabled={loading}>
           {loading ? "Generating..." : "Generate PDF"}
         </button>
