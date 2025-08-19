@@ -3,36 +3,25 @@ import PDFDocument from "pdfkit";
 
 export async function POST(req: Request) {
   const data = await req.json();
-  console.log("Received data:", data); // Log incoming data for debugging
-
-  const doc = new PDFDocument({ margin: 50 });
-
-  // Collect PDF data into a buffer
-  const buffers: Buffer[] = [];
-  doc.on("data", (chunk) => buffers.push(chunk));
-  const pdfPromise = new Promise<Buffer>((resolve) => {
-    doc.on("end", () => {
-      const pdfBuffer = Buffer.concat(buffers);
-      resolve(pdfBuffer);
-    });
-  });
+  console.log("Received data:", JSON.stringify(data).substring(0, 100) + "..."); // Log truncated data
 
   try {
-    // Add content to PDF
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Collect PDF data into a buffer
+    const buffers: Buffer[] = [];
+    doc.on("data", (chunk) => buffers.push(chunk));
+    const pdfPromise = new Promise<Buffer>((resolve, reject) => {
+      doc.on("end", () => {
+        const pdfBuffer = Buffer.concat(buffers);
+        resolve(pdfBuffer);
+      });
+      doc.on("error", (error) => reject(error));
+    });
+
+    // Add content to PDF (photo disabled temporarily)
     doc.fontSize(25).text("Biodata", { align: "center" });
     doc.moveDown();
-
-    if (data.photo) {
-      try {
-        console.log("Processing photo:", data.photo.substring(0, 50) + "..."); // Log first 50 chars of photo data
-        const imageBuffer = Buffer.from(data.photo.split(",")[1], "base64");
-        doc.image(imageBuffer, 400, 50, { fit: [100, 100], align: "right" });
-      } catch (imageError) {
-        console.error("Image processing error:", imageError);
-        // Continue without image if it fails
-      }
-    }
-
     doc.fontSize(12).text(`Full Name: ${data.name || "N/A"}`);
     doc.text(`Date of Birth: ${data.dob || "N/A"}`);
     doc.text(`Place of Birth: ${data.placeOfBirth || "N/A"}`);
@@ -62,7 +51,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    console.error("Error in PDF generation:", error);
     return new NextResponse(JSON.stringify({ error: "Failed to generate PDF" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
