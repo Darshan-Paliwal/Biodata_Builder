@@ -8,52 +8,21 @@ export async function POST(req: Request) {
   try {
     // Create a new PDFDocument
     const pdfDoc = await PDFDocument.create();
-    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
-    // Add a blank page to the document
-    const page = pdfDoc.addPage([550, 750]);
-    const { width, height } = page.getSize();
-    const fontSize = 12;
+    // Add a page
+    const page = pdfDoc.addPage([400, 600]);
 
-    // Add title
-    page.drawText("Biodata", {
-      x: width / 2 - 50,
-      y: height - 50,
-      size: 25,
-      font: timesRomanFont,
+    // Add minimal text
+    page.drawText(`Name: ${data.name || "N/A"}`, {
+      x: 50,
+      y: 500,
+      size: 12,
+      font,
       color: rgb(0, 0, 0),
     });
 
-    let yPosition = height - 100;
-
-    // Add text fields
-    const fields = [
-      `Full Name: ${data.name || "N/A"}`,
-      `Date of Birth: ${data.dob || "N/A"}`,
-      `Place of Birth: ${data.placeOfBirth || "N/A"}`,
-      `Height: ${data.height || "N/A"}`,
-      `Education: ${data.education || "N/A"}`,
-      `Occupation: ${data.occupation || "N/A"}`,
-      `Father's Name: ${data.fatherName || "N/A"}`,
-      `Mother's Name: ${data.motherName || "N/A"}`,
-      `Siblings: ${data.siblings || "N/A"}`,
-      `Contact Number: ${data.contact || "N/A"}`,
-      `Address: ${data.address || "N/A"}`,
-    ];
-
-    fields.forEach((field) => {
-      page.drawText(field, {
-        x: 50,
-        y: yPosition,
-        size: fontSize,
-        font: timesRomanFont,
-        color: rgb(0, 0, 0),
-        maxWidth: width - 100,
-      });
-      yPosition -= 20; // Adjust spacing
-    });
-
-    // Serialize the PDFDocument to bytes (a Uint8Array)
+    // Serialize the PDFDocument to bytes
     const pdfBytes = await pdfDoc.save();
 
     // Convert to Blob
