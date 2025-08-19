@@ -16,29 +16,17 @@ export default function Home() {
     contact: "",
     address: "",
   });
-  const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhoto(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const data = { ...formData, photo };
+    const data = { ...formData }; // No photo included
 
     try {
       const response = await fetch("/api/generate-pdf", {
@@ -104,9 +92,6 @@ export default function Home() {
 
         <label>Address:</label>
         <textarea name="address" value={formData.address} onChange={handleChange} />
-
-        <label>Photo:</label>
-        <input type="file" accept="image/*" onChange={handlePhotoChange} />
 
         <button type="submit" disabled={loading}>
           {loading ? "Generating..." : "Generate PDF"}
