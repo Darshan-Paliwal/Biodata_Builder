@@ -1,0 +1,7 @@
+// netlify.toml
+[build]
+  command = "npm run build" // Explicit build command
+  publish = "out" // Next.js output directory
+  environment = { NODE_VERSION = "18" } // Enforce Node.js 18
+[functions]
+  directory = "functions" // Ensure functions directory if used
