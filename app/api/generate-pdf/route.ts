@@ -71,8 +71,8 @@ export async function POST(req: Request) {
         console.log("Image dimensions:", { naturalWidth, naturalHeight });
 
         // Reserved box dimensions on the right
-        const boxX = 1600;
-        const boxY = 300;
+        const boxX = 2000;
+        const boxY = 500;
         const boxWidth = 800;
         const boxHeight = 1300;
 
