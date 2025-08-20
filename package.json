@@ -1,17 +1,16 @@
-// package.json
 {
   "name": "biodata-generator",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build", // Build command for Next.js
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
-    "next": "14.2.5", // Latest compatible Next.js version
-    "pdf-lib": "^1.17.1", // PDF generation library
+    "next": "14.2.5",
+    "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-dom": "^18"
   },
