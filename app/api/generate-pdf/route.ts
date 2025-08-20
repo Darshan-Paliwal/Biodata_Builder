@@ -13,16 +13,20 @@ export async function POST(req: Request) {
     // Add a page (landscape, 2400x1800px)
     const page = pdfDoc.addPage([2400, 1800]);
 
-    // Title
-    page.drawText("BIO DATA : " + (formData.name || "N/A"), {
-      x: 100,
+    // Centered Title
+    const title = "BIO DATA : " + (formData.name || "N/A");
+    const titleWidth = font.widthOfTextAtSize(title, 80);
+    const pageWidth = 2400;
+    const titleX = (pageWidth - titleWidth) / 2; // Center the title
+    page.drawText(title, {
+      x: titleX,
       y: 1650,
       size: 80,
       font,
       color: rgb(0, 0, 0),
     });
 
-    // Add form data with bullet points
+    // Add form data with bullet points, increased margin
     let y = 1500;
     const fields = [
       ["Name", formData.name || "N/A"],
@@ -47,13 +51,14 @@ export async function POST(req: Request) {
       ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
     ];
 
+    const textMargin = 100; // Increased margin from 50 to 100
     fields.forEach(([key, value]) => {
-      page.drawText("•", 50, y, { font, size: 48, color: rgb(0, 0, 0) });
-      page.drawText(`${key}: ${value}`, 100, y, { font, size: 48, color: rgb(0, 0, 0) });
+      page.drawText("•", textMargin, y, { font, size: 48, color: rgb(0, 0, 0) });
+      page.drawText(`${key}: ${value}`, textMargin + 50, y, { font, size: 48, color: rgb(0, 0, 0) });
       y -= 70;
     });
 
-    // Add Image (if provided) with centered placement in 700x1000 box
+    // Add Image (if provided) with centered placement in larger 800x1200 box
     if (image) {
       try {
         // Convert base64 to Uint8Array
@@ -73,11 +78,11 @@ export async function POST(req: Request) {
         const naturalHeight = img.height;
         console.log("Original image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions on the right
-        const boxX = 1600;
-        const boxY = 300;
-        const boxWidth = 700;
-        const boxHeight = 1000;
+        // Reserved box dimensions on the right (larger box)
+        const boxX = 1600; // Right side
+        const boxY = 300;  // Top of the box
+        const boxWidth = 800; // Increased from 700 to 800
+        const boxHeight = 1200; // Increased from 1000 to 1200
 
         // Calculate scale factor to fit within box without upscaling
         const widthRatio = boxWidth / naturalWidth;
@@ -95,10 +100,13 @@ export async function POST(req: Request) {
         const yOffset = (boxHeight - drawHeight) / 2;
         console.log("Offsets:", { xOffset, yOffset });
 
+        // Ensure vertical centering within the page (adjust boxY if needed)
+        const verticalCenterY = boxY + yOffset;
+
         // Draw image centered in the box
         page.drawImage(img, {
           x: boxX + xOffset,
-          y: boxY + yOffset,
+          y: verticalCenterY,
           width: drawWidth,
           height: drawHeight,
           opacity: 1, // Ensure no transparency issues
@@ -117,7 +125,7 @@ export async function POST(req: Request) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=biodata.pdf",
+        "Content-Disposition": attachment; filename=biodata.pdf",
       },
     });
   } catch (error) {
