@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import jsPDF from "jspdf";
+import sizeOf from "image-size";
 
 export async function POST(req: Request) {
   const { formData, image } = await req.json();
@@ -55,20 +56,17 @@ export async function POST(req: Request) {
         let imgType = "JPEG";
         if (image.startsWith("data:image/png")) imgType = "PNG";
 
+        const imageBytes = Buffer.from(image.split(",")[1], "base64");
+        const dimensions = sizeOf(imageBytes);
+        const naturalWidth = dimensions.width;
+        const naturalHeight = dimensions.height;
+        console.log("Image dimensions:", { naturalWidth, naturalHeight });
+
         // Reserved box dimensions
         const boxX = 1600;
         const boxY = 300;
         const maxWidth = 700;
         const maxHeight = 1000;
-
-        // Create an Image object to get natural dimensions
-        const img = new Image();
-        img.src = image;
-        await new Promise((resolve) => (img.onload = resolve));
-
-        const naturalWidth = img.naturalWidth;
-        const naturalHeight = img.naturalHeight;
-        console.log("Image dimensions:", { naturalWidth, naturalHeight });
 
         // Calculate scale factor to fit within max dimensions proportionally
         const widthRatio = maxWidth / naturalWidth;
@@ -78,8 +76,8 @@ export async function POST(req: Request) {
         const drawWidth = naturalWidth * scale;
         const drawHeight = naturalHeight * scale;
 
-        // Add image with calculated dimensions
-        doc.addImage(image, imgType, boxX, boxY, drawWidth, drawHeight);
+        // Add image with calculated dimensions and no compression
+        doc.addImage(image, imgType, boxX, boxY, drawWidth, drawHeight, null, 'NONE');
       } catch (err) {
         console.error("Error adding image:", err);
       }
