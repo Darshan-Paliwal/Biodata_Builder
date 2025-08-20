@@ -1,26 +1,29 @@
 import { NextResponse } from "next/server";
-import jsPDF from "jspdf";
-import sizeOf from "image-size";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 export async function POST(req: Request) {
   const { formData, image } = await req.json();
   console.log("Received data:", JSON.stringify({ formData, image: image ? "present" : "absent" }).substring(0, 100) + "...");
 
   try {
-    // Initialize jsPDF with landscape and high resolution
-    const doc = new jsPDF({
-      orientation: "landscape",
-      unit: "px",
-      format: [2400, 1800],
-    });
+    // Create a new PDFDocument
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+
+    // Add a page (landscape, 2400x1800px)
+    const page = pdfDoc.addPage([2400, 1800]);
 
     // Title
-    doc.setFontSize(80);
-    doc.text("BIO DATA : " + (formData.name || "N/A"), 100, 150);
+    page.drawText("BIO DATA : " + (formData.name || "N/A"), {
+      x: 100,
+      y: 1650,
+      size: 80,
+      font,
+      color: rgb(0, 0, 0),
+    });
 
     // Add form data with bullet points
-    doc.setFontSize(48);
-    let y = 300;
+    let y = 1500;
     const fields = [
       ["Name", formData.name || "N/A"],
       ["Birth Name", formData.birthName || "N/A"],
@@ -45,26 +48,31 @@ export async function POST(req: Request) {
     ];
 
     fields.forEach(([key, value]) => {
-      doc.text("•", 50, y); // Bullet point
-      doc.text(`${key}: ${value}`, 100, y);
-      y += 70;
+      page.drawText("•", 50, y, { font, size: 48, color: rgb(0, 0, 0) });
+      page.drawText(`${key}: ${value}`, 100, y, { font, size: 48, color: rgb(0, 0, 0) });
+      y -= 70;
     });
 
     // Add Image (if provided) with centered placement in 700x1000 box
     if (image) {
       try {
-        let imgType = "JPEG";
-        if (image.startsWith("data:image/png")) imgType = "PNG";
+        // Convert base64 to Uint8Array
+        const base64Data = image.split(",")[1];
+        const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
+        const img = await pdfDoc.embedJpg(imageBytes); // Use embedPng if PNG
 
-        const imageBytes = Buffer.from(image.split(",")[1], "base64");
-        const dimensions = sizeOf(imageBytes);
-        const naturalWidth = dimensions.width;
-        const naturalHeight = dimensions.height;
+        // Determine image type and embed accordingly
+        let imgInstance = img;
+        if (image.startsWith("data:image/png")) {
+          imgInstance = await pdfDoc.embedPng(imageBytes);
+        }
+
+        const { width: naturalWidth, height: naturalHeight } = imgInstance.scale(1);
         console.log("Image dimensions:", { naturalWidth, naturalHeight });
 
         // Reserved box dimensions on the right
-        const boxX = 1600; // Right side as per sample
-        const boxY = 300;  // Top of the box
+        const boxX = 1600;
+        const boxY = 300;
         const boxWidth = 700;
         const boxHeight = 1000;
 
@@ -77,21 +85,26 @@ export async function POST(req: Request) {
         const drawHeight = naturalHeight * scale;
 
         // Calculate centering offsets within the box
-        const xOffset = (boxWidth - drawWidth) / 2; // Horizontal centering
-        const yOffset = (boxHeight - drawHeight) / 2; // Vertical centering
+        const xOffset = (boxWidth - drawWidth) / 2;
+        const yOffset = (boxHeight - drawHeight) / 2;
 
-        // Add image with calculated dimensions, centered in the box, no compression
-        doc.addImage(image, imgType, boxX + xOffset, boxY + yOffset, drawWidth, drawHeight, null, 'NONE');
+        // Draw image centered in the box
+        page.drawImage(imgInstance, {
+          x: boxX + xOffset,
+          y: boxY + yOffset,
+          width: drawWidth,
+          height: drawHeight,
+        });
       } catch (err) {
         console.error("Error adding image:", err);
       }
     }
 
-    // Generate and send PDF
-    const pdfData = doc.output("arraybuffer");
-    const pdfBlob = new Blob([pdfData], { type: "application/pdf" });
+    // Serialize the PDFDocument to bytes
+    const pdfBytes = await pdfDoc.save();
+    const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
 
-    console.log("PDF generated successfully, size:", pdfData.byteLength);
+    console.log("PDF generated successfully, size:", pdfBytes.length);
     return new NextResponse(pdfBlob, {
       status: 200,
       headers: {
@@ -100,7 +113,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("PDF generation error:", error);
+    console.error("Error in PDF generation:", error);
     return new NextResponse(JSON.stringify({ error: "Failed to generate PDF" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
