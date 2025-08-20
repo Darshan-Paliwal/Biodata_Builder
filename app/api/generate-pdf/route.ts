@@ -1,3 +1,4 @@
+// app/api/generate-pdf/route.ts
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb, PDFImage } from "pdf-lib";
 
@@ -8,16 +9,16 @@ export async function POST(req: Request) {
   try {
     // Create a new PDFDocument
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman); // Using TimesRoman font for text
 
     // Add a page (landscape, 2400x1800px)
     const page = pdfDoc.addPage([2400, 1800]);
 
     // Centered Title
     const title = "BIO DATA : " + (formData.name || "N/A");
-    const titleWidth = font.widthOfTextAtSize(title, 80);
+    const titleWidth = font.widthOfTextAtSize(title, 80); // Calculate title width for centering
     const pageWidth = 2400;
-    const titleX = (pageWidth - titleWidth) / 2;
+    const titleX = (pageWidth - titleWidth) / 2; // Center title horizontally
     page.drawText(title, {
       x: titleX,
       y: 1650,
@@ -51,10 +52,10 @@ export async function POST(req: Request) {
       ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
     ];
 
-    const textMargin = 100; // Increased margin
+    const textMargin = 100; // Increased margin for spacing
     const fontSize = 48;
 
-    // Calculate the maximum key width for alignment
+    // Calculate maximum key width for colon alignment
     let maxKeyWidth = 0;
     fields.forEach(([key]) => {
       const keyWidth = font.widthOfTextAtSize(key, fontSize);
@@ -66,19 +67,19 @@ export async function POST(req: Request) {
       const keyX = textMargin + (maxKeyWidth - keyWidth); // Right-align keys for colon alignment
       page.drawText("•", textMargin - 50, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Bullet point
       page.drawText(key, keyX, y, { font, size: fontSize, color: rgb(0, 0, 0) });
-      page.drawText(":", textMargin + maxKeyWidth + 10, y, { font, size: fontSize, color: rgb(0, 0, 0) });
+      page.drawText(":", textMargin + maxKeyWidth + 10, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Fixed colon position
       page.drawText(value, textMargin + maxKeyWidth + 30, y, { font, size: fontSize, color: rgb(0, 0, 0) });
       y -= 70;
     });
 
-    // Add Image (if provided) with centered placement in 800x1200 box
+    // Add Image with centered placement in 800x1200 box
     if (image) {
       try {
         // Convert base64 to Uint8Array
         const base64Data = image.split(",")[1];
         const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
 
-        // Embed the image
+        // Embed the image based on type
         let img: PDFImage;
         if (image.startsWith("data:image/png")) {
           img = await pdfDoc.embedPng(imageBytes);
@@ -91,35 +92,35 @@ export async function POST(req: Request) {
         const naturalHeight = img.height;
         console.log("Original image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions on the right (larger box)
-        const boxX = 1400; // Adjusted left for more margin
+        // Larger box dimensions on the right with more margin
+        const boxX = 1400; // Adjusted left for margin
         const boxWidth = 800;
         const boxHeight = 1200;
 
-        // Calculate scale factor to fit within box without upscaling
+        // Calculate scale factor to fit without upscaling
         const widthRatio = boxWidth / naturalWidth;
         const heightRatio = boxHeight / naturalHeight;
         const scale = Math.min(widthRatio, heightRatio, 1);
         console.log("Scale factor:", scale);
 
-        // Apply scale to get display dimensions
+        // Apply scale for display dimensions
         const drawWidth = naturalWidth * scale;
         const drawHeight = naturalHeight * scale;
         console.log("Display dimensions:", { drawWidth, drawHeight });
 
-        // Calculate centering offsets within the box
+        // Calculate centering offsets
         const xOffset = (boxWidth - drawWidth) / 2;
         const yOffset = (boxHeight - drawHeight) / 2;
         console.log("Offsets:", { xOffset, yOffset });
 
-        // Calculate vertical centering for the box itself
+        // Vertically center the box on the page
         const pageHeight = 1800;
-        const boxY = (pageHeight - boxHeight) / 2 + yOffset;
+        const boxY = (pageHeight - boxHeight) / 2;
 
         // Draw image centered in the box
         page.drawImage(img, {
           x: boxX + xOffset,
-          y: boxY,
+          y: boxY + yOffset,
           width: drawWidth,
           height: drawHeight,
           opacity: 1,
