@@ -73,8 +73,8 @@ export async function POST(req: Request) {
         // Reserved box dimensions on the right
         const boxX = 1600;
         const boxY = 300;
-        const boxWidth = 700;
-        const boxHeight = 1000;
+        const boxWidth = 800;
+        const boxHeight = 1300;
 
         // Calculate scale factor to fit within box proportionally
         const widthRatio = boxWidth / naturalWidth;
