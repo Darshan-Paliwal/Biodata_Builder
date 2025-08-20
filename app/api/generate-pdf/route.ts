@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       y += 70;
     });
 
-    // Add Image (if provided) with proportional scaling and vertical centering on left side
+    // Add Image (if provided) with centered placement in 700x1000 box
     if (image) {
       try {
         let imgType = "JPEG";
@@ -62,25 +62,26 @@ export async function POST(req: Request) {
         const naturalHeight = dimensions.height;
         console.log("Image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions on left side
-        const boxX = 1600; // Moved to right for sample match, change to 50 for left if needed
-        const maxWidth = 700;
-        const maxHeight = 1000;
+        // Reserved box dimensions on the right
+        const boxX = 1600; // Right side as per sample
+        const boxY = 300;  // Top of the box
+        const boxWidth = 700;
+        const boxHeight = 1000;
 
-        // Calculate scale factor to preserve aspect ratio
-        const widthRatio = maxWidth / naturalWidth;
-        const heightRatio = maxHeight / naturalHeight;
-        const scale = Math.min(widthRatio, heightRatio, 1); // Preserve ratio, no upscaling
+        // Calculate scale factor to fit within box proportionally
+        const widthRatio = boxWidth / naturalWidth;
+        const heightRatio = boxHeight / naturalHeight;
+        const scale = Math.min(widthRatio, heightRatio, 1); // No upscaling
 
         const drawWidth = naturalWidth * scale;
         const drawHeight = naturalHeight * scale;
 
-        // Calculate y for vertical centering within the page (1800px height)
-        const pageHeight = 1800;
-        const boxY = (pageHeight - drawHeight) / 2;
+        // Calculate centering offsets within the box
+        const xOffset = (boxWidth - drawWidth) / 2; // Horizontal centering
+        const yOffset = (boxHeight - drawHeight) / 2; // Vertical centering
 
-        // Add image with calculated dimensions and no compression, preserving quality
-        doc.addImage(image, imgType, boxX, boxY, drawWidth, drawHeight, null, 'NONE');
+        // Add image with calculated dimensions, centered in the box, no compression
+        doc.addImage(image, imgType, boxX + xOffset, boxY + yOffset, drawWidth, drawHeight, null, 'NONE');
       } catch (err) {
         console.error("Error adding image:", err);
       }
