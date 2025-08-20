@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    // Add form data with bullet points, increased margin
+    // Add form data with bullet points and aligned colons
     let y = 1500;
     const fields = [
       ["Name", formData.name || "N/A"],
@@ -51,14 +51,20 @@ export async function POST(req: Request) {
       ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
     ];
 
-    const textMargin = 100; // Increased margin from 50 to 100
+    const textMargin = 100; // Margin as per previous update
+    // Find the maximum width of field names to align colons
+    const maxLabelWidth = Math.max(...fields.map(([key]) => font.widthOfTextAtSize(key, 48)));
+    const colonX = textMargin + maxLabelWidth + 10; // Position after the widest label, with a small gap
+
     fields.forEach(([key, value]) => {
       page.drawText("•", textMargin, y, { font, size: 48, color: rgb(0, 0, 0) });
-      page.drawText(`${key}: ${value}`, textMargin + 50, y, { font, size: 48, color: rgb(0, 0, 0) });
+      page.drawText(key, textMargin, y, { font, size: 48, color: rgb(0, 0, 0) });
+      page.drawText(":", colonX, y, { font, size: 48, color: rgb(0, 0, 0) }); // Align colon vertically
+      page.drawText(value, colonX + font.widthOfTextAtSize(":", 48) + 10, y, { font, size: 48, color: rgb(0, 0, 0) }); // Value after colon
       y -= 70;
     });
 
-    // Add Image (if provided) with centered placement in larger 800x1200 box
+    // Add Image (if provided) with centered placement in 800x1200 box
     if (image) {
       try {
         // Convert base64 to Uint8Array
@@ -78,11 +84,11 @@ export async function POST(req: Request) {
         const naturalHeight = img.height;
         console.log("Original image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions on the right (larger box)
-        const boxX = 1600; // Right side
-        const boxY = 300;  // Top of the box
-        const boxWidth = 800; // Increased from 700 to 800
-        const boxHeight = 1200; // Increased from 1000 to 1200
+        // Reserved box dimensions on the right
+        const boxX = 1600;
+        const boxY = 300;
+        const boxWidth = 800;
+        const boxHeight = 1200;
 
         // Calculate scale factor to fit within box without upscaling
         const widthRatio = boxWidth / naturalWidth;
@@ -100,7 +106,7 @@ export async function POST(req: Request) {
         const yOffset = (boxHeight - drawHeight) / 2;
         console.log("Offsets:", { xOffset, yOffset });
 
-        // Ensure vertical centering within the page (adjust boxY if needed)
+        // Ensure vertical centering within the box
         const verticalCenterY = boxY + yOffset;
 
         // Draw image centered in the box
@@ -109,7 +115,7 @@ export async function POST(req: Request) {
           y: verticalCenterY,
           width: drawWidth,
           height: drawHeight,
-          opacity: 1, // Ensure no transparency issues
+          opacity: 1,
         });
       } catch (err) {
         console.error("Error adding image:", err);
@@ -125,7 +131,7 @@ export async function POST(req: Request) {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": attachment; filename=biodata.pdf",
+        "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
   } catch (error) {
