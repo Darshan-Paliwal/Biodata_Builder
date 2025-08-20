@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     doc.setFontSize(80);
     doc.text("BIO DATA : " + (formData.name || "N/A"), 100, 150);
 
-    // Add form data
+    // Add form data with bullet points
     doc.setFontSize(48);
     let y = 300;
     const fields = [
@@ -34,9 +34,9 @@ export async function POST(req: Request) {
       ["Occupation", formData.occupation || "N/A"],
       ["Father Name", formData.fatherName || "N/A"],
       ["Mother Name", formData.motherName || "N/A"],
-      ["Occupation", formData.motherOccupation || "N/A"],
+      ["Mother Occupation", formData.motherOccupation || "N/A"],
       ["Sister Name", formData.sisterName || "N/A"],
-      ["Qualification", formData.sisterQualification || "N/A"],
+      ["Sister Qualification", formData.sisterQualification || "N/A"],
       ["Residence", formData.residence || "N/A"],
       ["Permanent Address", formData.permanentAddress || "N/A"],
       ["Mobile Number (Mother)", formData.mobileMother || "N/A"],
@@ -44,22 +44,42 @@ export async function POST(req: Request) {
     ];
 
     fields.forEach(([key, value]) => {
+      doc.text("•", 50, y); // Bullet point
       doc.text(`${key}: ${value}`, 100, y);
       y += 70;
     });
 
-    // Add Image (if provided)
+    // Add Image (if provided) with proportional scaling
     if (image) {
       try {
         let imgType = "JPEG";
         if (image.startsWith("data:image/png")) imgType = "PNG";
 
+        // Reserved box dimensions
         const boxX = 1600;
         const boxY = 300;
-        const boxWidth = 700;
-        const boxHeight = 1000;
+        const maxWidth = 700;
+        const maxHeight = 1000;
 
-        doc.addImage(image, imgType, boxX, boxY, boxWidth, boxHeight);
+        // Create an Image object to get natural dimensions
+        const img = new Image();
+        img.src = image;
+        await new Promise((resolve) => (img.onload = resolve));
+
+        const naturalWidth = img.naturalWidth;
+        const naturalHeight = img.naturalHeight;
+        console.log("Image dimensions:", { naturalWidth, naturalHeight });
+
+        // Calculate scale factor to fit within max dimensions proportionally
+        const widthRatio = maxWidth / naturalWidth;
+        const heightRatio = maxHeight / naturalHeight;
+        const scale = Math.min(widthRatio, heightRatio, 1); // Ensure scale <= 1 to avoid upscaling
+
+        const drawWidth = naturalWidth * scale;
+        const drawHeight = naturalHeight * scale;
+
+        // Add image with calculated dimensions
+        doc.addImage(image, imgType, boxX, boxY, drawWidth, drawHeight);
       } catch (err) {
         console.error("Error adding image:", err);
       }
