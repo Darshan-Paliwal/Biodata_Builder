@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     const title = "BIO DATA : " + (formData.name || "N/A");
     const titleWidth = font.widthOfTextAtSize(title, 80);
     const pageWidth = 2400;
-    const titleX = (pageWidth - titleWidth) / 2; // Center the title
+    const titleX = (pageWidth - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
       y: 1650,
@@ -51,16 +51,23 @@ export async function POST(req: Request) {
       ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
     ];
 
-    const textMargin = 100; // Margin as per previous update
-    // Find the maximum width of field names to align colons
-    const maxLabelWidth = Math.max(...fields.map(([key]) => font.widthOfTextAtSize(key, 48)));
-    const colonX = textMargin + maxLabelWidth + 10; // Position after the widest label, with a small gap
+    const textMargin = 100; // Increased margin
+    const fontSize = 48;
+
+    // Calculate the maximum key width for alignment
+    let maxKeyWidth = 0;
+    fields.forEach(([key]) => {
+      const keyWidth = font.widthOfTextAtSize(key, fontSize);
+      if (keyWidth > maxKeyWidth) maxKeyWidth = keyWidth;
+    });
 
     fields.forEach(([key, value]) => {
-      page.drawText("•", textMargin, y, { font, size: 48, color: rgb(0, 0, 0) });
-      page.drawText(key, textMargin, y, { font, size: 48, color: rgb(0, 0, 0) });
-      page.drawText(":", colonX, y, { font, size: 48, color: rgb(0, 0, 0) }); // Align colon vertically
-      page.drawText(value, colonX + font.widthOfTextAtSize(":", 48) + 10, y, { font, size: 48, color: rgb(0, 0, 0) }); // Value after colon
+      const keyWidth = font.widthOfTextAtSize(key, fontSize);
+      const keyX = textMargin + (maxKeyWidth - keyWidth); // Right-align keys for colon alignment
+      page.drawText("•", textMargin - 50, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Bullet point
+      page.drawText(key, keyX, y, { font, size: fontSize, color: rgb(0, 0, 0) });
+      page.drawText(":", textMargin + maxKeyWidth + 10, y, { font, size: fontSize, color: rgb(0, 0, 0) });
+      page.drawText(value, textMargin + maxKeyWidth + 30, y, { font, size: fontSize, color: rgb(0, 0, 0) });
       y -= 70;
     });
 
@@ -76,7 +83,7 @@ export async function POST(req: Request) {
         if (image.startsWith("data:image/png")) {
           img = await pdfDoc.embedPng(imageBytes);
         } else {
-          img = await pdfDoc.embedJpg(imageBytes); // Default to JPEG
+          img = await pdfDoc.embedJpg(imageBytes);
         }
 
         // Get original dimensions
@@ -84,16 +91,15 @@ export async function POST(req: Request) {
         const naturalHeight = img.height;
         console.log("Original image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions on the right
-        const boxX = 1600;
-        const boxY = 300;
+        // Reserved box dimensions on the right (larger box)
+        const boxX = 1400; // Adjusted left for more margin
         const boxWidth = 800;
         const boxHeight = 1200;
 
         // Calculate scale factor to fit within box without upscaling
         const widthRatio = boxWidth / naturalWidth;
         const heightRatio = boxHeight / naturalHeight;
-        const scale = Math.min(widthRatio, heightRatio, 1); // No upscaling
+        const scale = Math.min(widthRatio, heightRatio, 1);
         console.log("Scale factor:", scale);
 
         // Apply scale to get display dimensions
@@ -106,13 +112,14 @@ export async function POST(req: Request) {
         const yOffset = (boxHeight - drawHeight) / 2;
         console.log("Offsets:", { xOffset, yOffset });
 
-        // Ensure vertical centering within the box
-        const verticalCenterY = boxY + yOffset;
+        // Calculate vertical centering for the box itself
+        const pageHeight = 1800;
+        const boxY = (pageHeight - boxHeight) / 2 + yOffset;
 
         // Draw image centered in the box
         page.drawImage(img, {
           x: boxX + xOffset,
-          y: verticalCenterY,
+          y: boxY,
           width: drawWidth,
           height: drawHeight,
           opacity: 1,
