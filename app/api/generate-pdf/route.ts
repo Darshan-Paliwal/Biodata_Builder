@@ -9,7 +9,7 @@ export async function POST(req: Request) {
   try {
     // Create a new PDFDocument
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman); // Standard font for text
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman); // Use standard font
 
     // Add a page (landscape, 2400x1800px)
     const page = pdfDoc.addPage([2400, 1800]);
