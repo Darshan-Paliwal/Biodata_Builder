@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "next": "14.2.5",
-    "pdf-lib": "^1.17.1", // Using pdf-lib for PDF generation
+    "pdf-lib": "^1.17.1",
     "react": "^18",
     "react-dom": "^18"
   },
