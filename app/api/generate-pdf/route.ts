@@ -1,34 +1,75 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import jsPDF from "jspdf";
 
 export async function POST(req: Request) {
-  const data = await req.json();
-  console.log("Received data:", JSON.stringify(data).substring(0, 100) + "...");
+  const { formData, image } = await req.json();
+  console.log("Received data:", JSON.stringify({ formData, image: image ? "present" : "absent" }).substring(0, 100) + "...");
 
   try {
-    // Create a new PDFDocument
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-
-    // Add a page
-    const page = pdfDoc.addPage([400, 600]);
-
-    // Add minimal text
-    page.drawText(`Name: ${data.name || "N/A"}`, {
-      x: 50,
-      y: 500,
-      size: 12,
-      font,
-      color: rgb(0, 0, 0),
+    // Initialize jsPDF with landscape and high resolution
+    const doc = new jsPDF({
+      orientation: "landscape",
+      unit: "px",
+      format: [2400, 1800],
     });
 
-    // Serialize the PDFDocument to bytes
-    const pdfBytes = await pdfDoc.save();
+    // Title
+    doc.setFontSize(80);
+    doc.text("BIO DATA : " + (formData.name || "N/A"), 100, 150);
 
-    // Convert to Blob
-    const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+    // Add form data
+    doc.setFontSize(48);
+    let y = 300;
+    const fields = [
+      ["Name", formData.name || "N/A"],
+      ["Birth Name", formData.birthName || "N/A"],
+      ["DOB", formData.dob || "N/A"],
+      ["Birth time", formData.birthTime || "N/A"],
+      ["Birth Place", formData.birthPlace || "N/A"],
+      ["District", formData.district || "N/A"],
+      ["Gotra", formData.gotra || "N/A"],
+      ["Height", formData.height || "N/A"],
+      ["Blood Group", formData.bloodGroup || "N/A"],
+      ["Qualification", formData.qualification || "N/A"],
+      ["Occupation", formData.occupation || "N/A"],
+      ["Father Name", formData.fatherName || "N/A"],
+      ["Mother Name", formData.motherName || "N/A"],
+      ["Occupation", formData.motherOccupation || "N/A"],
+      ["Sister Name", formData.sisterName || "N/A"],
+      ["Qualification", formData.sisterQualification || "N/A"],
+      ["Residence", formData.residence || "N/A"],
+      ["Permanent Address", formData.permanentAddress || "N/A"],
+      ["Mobile Number (Mother)", formData.mobileMother || "N/A"],
+      ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
+    ];
 
-    console.log("PDF generated successfully, size:", pdfBytes.length);
+    fields.forEach(([key, value]) => {
+      doc.text(`${key}: ${value}`, 100, y);
+      y += 70;
+    });
+
+    // Add Image (if provided)
+    if (image) {
+      try {
+        let imgType = "JPEG";
+        if (image.startsWith("data:image/png")) imgType = "PNG";
+
+        const boxX = 1600;
+        const boxY = 300;
+        const boxWidth = 700;
+        const boxHeight = 1000;
+
+        doc.addImage(image, imgType, boxX, boxY, boxWidth, boxHeight);
+      } catch (err) {
+        console.error("Error adding image:", err);
+      }
+    }
+
+    // Generate and send PDF
+    const pdfData = doc.output("arraybuffer");
+    const pdfBlob = new Blob([pdfData], { type: "application/pdf" });
+
+    console.log("PDF generated successfully, size:", pdfData.byteLength);
     return new NextResponse(pdfBlob, {
       status: 200,
       headers: {
@@ -37,7 +78,7 @@ export async function POST(req: Request) {
       },
     });
   } catch (error) {
-    console.error("Error in PDF generation:", error);
+    console.error("PDF generation error:", error);
     return new NextResponse(JSON.stringify({ error: "Failed to generate PDF" }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
