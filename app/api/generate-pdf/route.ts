@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       y += 70;
     });
 
-    // Add Image (if provided) with proportional scaling
+    // Add Image (if provided) with proportional scaling and vertical centering on left side
     if (image) {
       try {
         let imgType = "JPEG";
@@ -62,21 +62,24 @@ export async function POST(req: Request) {
         const naturalHeight = dimensions.height;
         console.log("Image dimensions:", { naturalWidth, naturalHeight });
 
-        // Reserved box dimensions
-        const boxX = 1600;
-        const boxY = 300;
+        // Reserved box dimensions on left side
+        const boxX = 1600; // Moved to right for sample match, change to 50 for left if needed
         const maxWidth = 700;
         const maxHeight = 1000;
 
-        // Calculate scale factor to fit within max dimensions proportionally
+        // Calculate scale factor to preserve aspect ratio
         const widthRatio = maxWidth / naturalWidth;
         const heightRatio = maxHeight / naturalHeight;
-        const scale = Math.min(widthRatio, heightRatio, 1); // Ensure scale <= 1 to avoid upscaling
+        const scale = Math.min(widthRatio, heightRatio, 1); // Preserve ratio, no upscaling
 
         const drawWidth = naturalWidth * scale;
         const drawHeight = naturalHeight * scale;
 
-        // Add image with calculated dimensions and no compression
+        // Calculate y for vertical centering within the page (1800px height)
+        const pageHeight = 1800;
+        const boxY = (pageHeight - drawHeight) / 2;
+
+        // Add image with calculated dimensions and no compression, preserving quality
         doc.addImage(image, imgType, boxX, boxY, drawWidth, drawHeight, null, 'NONE');
       } catch (err) {
         console.error("Error adding image:", err);
