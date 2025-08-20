@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFImage } from "pdf-lib";
 
 export async function POST(req: Request) {
   const { formData, image } = await req.json();
@@ -59,41 +59,49 @@ export async function POST(req: Request) {
         // Convert base64 to Uint8Array
         const base64Data = image.split(",")[1];
         const imageBytes = Uint8Array.from(atob(base64Data), (c) => c.charCodeAt(0));
-        const img = await pdfDoc.embedJpg(imageBytes); // Use embedPng if PNG
 
-        // Determine image type and embed accordingly
-        let imgInstance = img;
+        // Embed the image
+        let img: PDFImage;
         if (image.startsWith("data:image/png")) {
-          imgInstance = await pdfDoc.embedPng(imageBytes);
+          img = await pdfDoc.embedPng(imageBytes);
+        } else {
+          img = await pdfDoc.embedJpg(imageBytes); // Default to JPEG
         }
 
-        const { width: naturalWidth, height: naturalHeight } = imgInstance.scale(1);
-        console.log("Image dimensions:", { naturalWidth, naturalHeight });
+        // Get original dimensions
+        const naturalWidth = img.width;
+        const naturalHeight = img.height;
+        console.log("Original image dimensions:", { naturalWidth, naturalHeight });
 
         // Reserved box dimensions on the right
-        const boxX = 2000;
-        const boxY = 500;
-        const boxWidth = 800;
-        const boxHeight = 1300;
+        const boxX = 1600;
+        const boxY = 300;
+        const boxWidth = 700;
+        const boxHeight = 1000;
 
-        // Calculate scale factor to fit within box proportionally
+        // Calculate scale factor to fit within box without upscaling
         const widthRatio = boxWidth / naturalWidth;
         const heightRatio = boxHeight / naturalHeight;
         const scale = Math.min(widthRatio, heightRatio, 1); // No upscaling
+        console.log("Scale factor:", scale);
 
+        // Apply scale to get display dimensions
         const drawWidth = naturalWidth * scale;
         const drawHeight = naturalHeight * scale;
+        console.log("Display dimensions:", { drawWidth, drawHeight });
 
         // Calculate centering offsets within the box
         const xOffset = (boxWidth - drawWidth) / 2;
         const yOffset = (boxHeight - drawHeight) / 2;
+        console.log("Offsets:", { xOffset, yOffset });
 
         // Draw image centered in the box
-        page.drawImage(imgInstance, {
+        page.drawImage(img, {
           x: boxX + xOffset,
           y: boxY + yOffset,
           width: drawWidth,
           height: drawHeight,
+          opacity: 1, // Ensure no transparency issues
         });
       } catch (err) {
         console.error("Error adding image:", err);
