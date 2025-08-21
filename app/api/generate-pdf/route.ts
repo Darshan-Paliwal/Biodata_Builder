@@ -56,7 +56,6 @@ export async function POST(req: Request) {
     const lineHeight = 25;
 
     function drawField(label: string, value: string) {
-      // Bullet
       page.drawText("•", {
         x: 40,
         y: yPos,
@@ -65,7 +64,6 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      // Label
       page.drawText(label, {
         x: 50,
         y: yPos,
@@ -74,7 +72,6 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      // Colon aligned
       const colonX = 50 + maxLabelWidth;
       page.drawText(" :", {
         x: colonX,
@@ -84,7 +81,6 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      // Value
       const valueX = colonX + 10;
       page.drawText(value || "-", {
         x: valueX,
@@ -97,26 +93,26 @@ export async function POST(req: Request) {
       yPos -= lineHeight;
     }
 
-    drawField("Name", formData.name);
-    drawField("Birth Name", formData.birthName);
-    drawField("DOB", formData.dob);
-    drawField("Birth Time", formData.birthTime);
-    drawField("Birth Place", formData.birthPlace);
-    drawField("District", formData.district);
-    drawField("Gotra", formData.gotra);
-    drawField("Height", formData.height);
-    drawField("Blood Group", formData.bloodGroup);
-    drawField("Qualification", formData.qualification);
-    drawField("Occupation", formData.occupation);
-    drawField("Father Name", formData.fatherName);
-    drawField("Mother Name", formData.motherName);
-    drawField("Mother Occupation", formData.motherOccupation);
-    drawField("Sister Name", formData.sisterName);
-    drawField("Sister Qualification", formData.sisterQualification);
-    drawField("Residence", formData.residence);
-    drawField("Permanent Address", formData.permanentAddress);
-    drawField("Mobile Number (Mother)", formData.mobileMother);
-    drawField("Mobile Number (Mama)", formData.mobileMama);
+    drawField("Name", formData.name || "-");
+    drawField("Birth Name", formData.birthName || "-");
+    drawField("DOB", formData.dob || "-");
+    drawField("Birth Time", formData.birthTime || "-");
+    drawField("Birth Place", formData.birthPlace || "-");
+    drawField("District", formData.district || "-");
+    drawField("Gotra", formData.gotra || "-");
+    drawField("Height", formData.height || "-");
+    drawField("Blood Group", formData.bloodGroup || "-");
+    drawField("Qualification", formData.qualification || "-");
+    drawField("Occupation", formData.occupation || "-");
+    drawField("Father Name", formData.fatherName || "-");
+    drawField("Mother Name", formData.motherName || "-");
+    drawField("Mother Occupation", formData.motherOccupation || "-");
+    drawField("Sister Name", formData.sisterName || "-");
+    drawField("Sister Qualification", formData.sisterQualification || "-");
+    drawField("Residence", formData.residence || "-");
+    drawField("Permanent Address", formData.permanentAddress || "-");
+    drawField("Mobile Number (Mother)", formData.mobileMother || "-");
+    drawField("Mobile Number (Mama)", formData.mobileMama || "-");
 
     if (imageBase64) {
       const imageBytes = Uint8Array.from(
@@ -127,14 +123,16 @@ export async function POST(req: Request) {
       let embeddedImage;
       if (imageBase64.startsWith("data:image/jpeg")) {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else {
+      } else if (imageBase64.startsWith("data:image/png")) {
         embeddedImage = await pdfDoc.embedPng(imageBytes);
+      } else {
+        throw new Error("Unsupported image format");
       }
 
       const imgDims = embeddedImage.scale(0.25);
       page.drawImage(embeddedImage, {
         x: 400,
-        y: height - 250,
+        y: yPos + 150,
         width: imgDims.width,
         height: imgDims.height,
       });
