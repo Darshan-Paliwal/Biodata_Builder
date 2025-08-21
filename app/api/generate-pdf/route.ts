@@ -53,14 +53,14 @@ export async function POST(req: Request) {
     });
 
     fields.forEach(([key, value]) => {
-      const keyWidth = font.widthOfTextAtSize(key, fontSize);
-      const keyX = textMargin + (maxKeyWidth - keyWidth); // Align keys
-      page.drawText("•", textMargin - 50, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Bullet
-      page.drawText(key, keyX, y, { font, size: fontSize, color: rgb(0, 0, 0) });
-      page.drawText(":", textMargin + maxKeyWidth + 10, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Fixed colon
-      page.drawText(value, textMargin + maxKeyWidth + 30, y, { font, size: fontSize, color: rgb(0, 0, 0) });
-      y -= 70;
-    });
+  const keyWidth = font.widthOfTextAtSize(key, fontSize);
+  const keyX = textMargin + (maxKeyWidth - keyWidth); // Align keys
+  page.drawText("•", textMargin - 50, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Bullet with options object
+  page.drawText(key, keyX, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Key with options
+  page.drawText(":", textMargin + maxKeyWidth + 10, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Colon with options
+  page.drawText(value, textMargin + maxKeyWidth + 30, y, { font, size: fontSize, color: rgb(0, 0, 0) }); // Value with options
+  y -= 70;
+});
 
     // Image handling
     if (image) {
