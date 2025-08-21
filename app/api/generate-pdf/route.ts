@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     const titleX = (width - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
-      y: height - 150, // Moved slightly down
+      y: height - 150,
       size: 52,
       font: fontBold,
       color: rgb(0, 0, 0),
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32)));
 
-    let yPos = height - 250; // Adjusted to move text slightly up
+    let yPos = height - 250;
     const lineHeight = 62;
 
     const drawField = (label: string, value: string) => {
@@ -131,8 +131,8 @@ export async function POST(req: Request) {
 
       const imgDims = embeddedImage.scale(0.75);
       page.drawImage(embeddedImage, {
-        x: 1500, // Moved right to prevent text overlap
-        y: 500,
+        x: 1600, // Moved further right to avoid text overlap
+        y: 600, // Moved slightly down
         width: imgDims.width,
         height: imgDims.height,
       });
