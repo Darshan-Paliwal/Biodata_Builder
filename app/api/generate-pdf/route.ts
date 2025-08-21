@@ -31,6 +31,7 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+    // Heading centered, slightly down
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     const titleX = (width - titleWidth) / 2;
@@ -70,7 +71,8 @@ export async function POST(req: Request) {
     let yPos = height - 250;
     const lineHeight = 62;
     const wrappedLineHeight = 40;
-    const valueMaxWidth = 1300 - (150 + maxLabelWidth + 20); // Further reduced to prevent overlap
+    const textAreaWidth = 1400; // Define a fixed width for text area on the left
+    const valueMaxWidth = textAreaWidth - (150 + maxLabelWidth + 20);
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
@@ -101,16 +103,7 @@ export async function POST(req: Request) {
       const valueX = colonX + 20;
       const lines = wrapText(value || "-", valueMaxWidth, font, 32);
 
-      page.drawText(lines[0], {
-        x: valueX,
-        y: yPos,
-        size: 32,
-        font,
-        color: rgb(0, 0, 0),
-      });
-
-      for (let i = 1; i < lines.length; i++) {
-        yPos -= wrappedLineHeight;
+      for (let i = 0; i < lines.length; i++) {
         page.drawText(lines[i], {
           x: valueX,
           y: yPos,
@@ -118,6 +111,7 @@ export async function POST(req: Request) {
           font,
           color: rgb(0, 0, 0),
         });
+        yPos -= wrappedLineHeight;
       }
 
       yPos -= lineHeight - wrappedLineHeight * (lines.length - 1);
@@ -160,8 +154,9 @@ export async function POST(req: Request) {
       }
 
       const imgDims = embeddedImage.scale(0.65);
+      const imageX = textAreaWidth + 50; // Position image after text area with margin
       page.drawImage(embeddedImage, {
-        x: 1650,
+        x: imageX,
         y: 400,
         width: imgDims.width,
         height: imgDims.height,
