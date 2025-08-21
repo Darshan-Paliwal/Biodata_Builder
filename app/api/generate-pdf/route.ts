@@ -9,38 +9,91 @@ export async function POST(req: Request) {
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595, 842]);
-    const { height } = page.getSize();
+    const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    page.drawText("Bio Data", {
-      x: 50,
+    // Heading centered
+    const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
+    const titleWidth = fontBold.widthOfTextAtSize(title, 22);
+    const titleX = (width - titleWidth) / 2;
+    page.drawText(title, {
+      x: titleX,
       y: height - 60,
       size: 22,
       font: fontBold,
       color: rgb(0, 0, 0),
     });
 
+    // Labels for alignment
+    const labels = [
+      "Name",
+      "Birth Name",
+      "DOB",
+      "Birth Time",
+      "Birth Place",
+      "District",
+      "Gotra",
+      "Height",
+      "Blood Group",
+      "Qualification",
+      "Occupation",
+      "Father Name",
+      "Mother Name",
+      "Mother Occupation",
+      "Sister Name",
+      "Sister Qualification",
+      "Residence",
+      "Permanent Address",
+      "Mobile Number (Mother)",
+      "Mobile Number (Mama)",
+    ];
+
+    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 12)));
+
     let yPos = height - 100;
     const lineHeight = 25;
 
     function drawField(label: string, value: string) {
-      const labelWidth = fontBold.widthOfTextAtSize(label + " :", 12);
-      page.drawText(label + " :", {
+      // Bullet
+      page.drawText("•", {
+        x: 40,
+        y: yPos,
+        size: 12,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      // Label
+      page.drawText(label, {
         x: 50,
         y: yPos,
         size: 12,
         font: fontBold,
         color: rgb(0, 0, 0),
       });
+
+      // Colon aligned
+      const colonX = 50 + maxLabelWidth;
+      page.drawText(" :", {
+        x: colonX,
+        y: yPos,
+        size: 12,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
+
+      // Value
+      const valueX = colonX + 10;
       page.drawText(value || "-", {
-        x: 50 + labelWidth + 10,
+        x: valueX,
         y: yPos,
         size: 12,
         font,
         color: rgb(0, 0, 0),
       });
+
       yPos -= lineHeight;
     }
 
@@ -62,8 +115,8 @@ export async function POST(req: Request) {
     drawField("Sister Qualification", formData.sisterQualification);
     drawField("Residence", formData.residence);
     drawField("Permanent Address", formData.permanentAddress);
-    drawField("Mobile (Mother)", formData.mobileMother);
-    drawField("Mobile (Mama)", formData.mobileMama);
+    drawField("Mobile Number (Mother)", formData.mobileMother);
+    drawField("Mobile Number (Mama)", formData.mobileMama);
 
     if (imageBase64) {
       const imageBytes = Uint8Array.from(
