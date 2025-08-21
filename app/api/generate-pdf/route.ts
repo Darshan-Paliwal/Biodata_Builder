@@ -31,7 +31,6 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Heading centered, slightly down
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     const titleX = (width - titleWidth) / 2;
@@ -70,8 +69,7 @@ export async function POST(req: Request) {
 
     let yPos = height - 250;
     const lineHeight = 62;
-    const wrappedLineHeight = 40;
-    const textAreaWidth = 1400; // Define a fixed width for text area on the left
+    const textAreaWidth = 1400; // Fixed width for text area
     const valueMaxWidth = textAreaWidth - (150 + maxLabelWidth + 20);
 
     const drawField = (label: string, value: string) => {
@@ -103,18 +101,29 @@ export async function POST(req: Request) {
       const valueX = colonX + 20;
       const lines = wrapText(value || "-", valueMaxWidth, font, 32);
 
-      for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], {
+      // Only adjust yPos if there are multiple lines
+      if (lines.length > 1) {
+        for (let i = 0; i < lines.length; i++) {
+          page.drawText(lines[i], {
+            x: valueX,
+            y: yPos,
+            size: 32,
+            font,
+            color: rgb(0, 0, 0),
+          });
+          if (i < lines.length - 1) yPos -= 40; // Wrap to next line only if needed
+        }
+        yPos -= lineHeight - 40 * (lines.length - 1);
+      } else {
+        page.drawText(lines[0], {
           x: valueX,
           y: yPos,
           size: 32,
           font,
           color: rgb(0, 0, 0),
         });
-        yPos -= wrappedLineHeight;
+        yPos -= lineHeight;
       }
-
-      yPos -= lineHeight - wrappedLineHeight * (lines.length - 1);
     };
 
     drawField("Name", formData.name || "-");
@@ -154,7 +163,7 @@ export async function POST(req: Request) {
       }
 
       const imgDims = embeddedImage.scale(0.65);
-      const imageX = textAreaWidth + 50; // Position image after text area with margin
+      const imageX = textAreaWidth + 100; // Moved slightly more to the right
       page.drawImage(embeddedImage, {
         x: imageX,
         y: 400,
