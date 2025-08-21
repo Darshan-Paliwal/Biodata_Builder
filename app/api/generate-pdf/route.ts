@@ -28,7 +28,7 @@ export async function POST(req: Request) {
     const textMargin = 80;
     let y = 740;
 
-    // Extract all fields
+    // Extract fields
     const fields: [string, string][] = Object.entries(body);
 
     // Find the widest key
@@ -37,8 +37,8 @@ export async function POST(req: Request) {
     );
 
     // Fixed alignment positions
-    const colonX = textMargin + maxKeyWidth + 10; // colons in one line
-    const valueX = colonX + 20;                   // values aligned too
+    const colonX = textMargin + maxKeyWidth + 10;
+    const valueX = colonX + 20;
 
     // Draw each field
     fields.forEach(([key, value]) => {
@@ -82,7 +82,27 @@ export async function POST(req: Request) {
       y -= 40;
     });
 
-    // Finalize PDF
+    // Footer
+    const footerText = "Created by Darshan Paliwal";
+    const footerLink = "darshanpaliwal.netlify.app";
+
+    page.drawText(footerText, {
+      x: 80,
+      y: 40,
+      font,
+      size: 12,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+
+    page.drawText(footerLink, {
+      x: 80 + font.widthOfTextAtSize(footerText, 12) + 10,
+      y: 40,
+      font,
+      size: 12,
+      color: rgb(0, 0, 1), // blue for link
+    });
+
+    // Save PDF
     const pdfBytes = await pdfDoc.save();
 
     return new NextResponse(pdfBytes, {
