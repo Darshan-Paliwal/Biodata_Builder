@@ -1,7 +1,6 @@
-// next.config.js
-module.exports = {
-  webpack: (config) => {
-    config.externals = [...(config.externals || []), 'neon']; // Exclude 'neon' to avoid issues
-    return config;
-  },
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
 };
+
+module.exports = nextConfig;
