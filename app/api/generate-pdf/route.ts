@@ -1,27 +1,19 @@
-// app/api/generate-pdf/route.ts
 import { NextResponse } from "next/server";
 import { PDFDocument, StandardFonts, rgb, PDFImage } from "pdf-lib";
 
 export async function POST(req: Request) {
   const { formData, image } = await req.json();
-  console.log(
-    "Received data:",
-    JSON.stringify({ formData, image: image ? "present" : "absent" }).substring(
-      0,
-      100
-    ) + "..."
-  );
 
   try {
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman); // Standard font
+    const font = await pdfDoc.embedFont(StandardFonts.TimesRoman);
 
-    const page = pdfDoc.addPage([2400, 1800]); // Landscape page
+    const page = pdfDoc.addPage([2400, 1800]);
 
-    // Centered Title
+    // Title
     const title = "BIO DATA : " + (formData.name || "N/A");
-    const titleWidth = font.widthOfTextAtSize(title, 80); // Measure title
-    const titleX = (2400 - titleWidth) / 2; // Center title
+    const titleWidth = font.widthOfTextAtSize(title, 80);
+    const titleX = (2400 - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
       y: 1650,
@@ -30,9 +22,9 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    // Form data with aligned colons
+    // Fields
     let y = 1500;
-    const fields = [
+    const fields: [string, string][] = [
       ["Name", formData.name || "N/A"],
       ["Birth Name", formData.birthName || "N/A"],
       ["DOB", formData.dob || "N/A"],
@@ -55,7 +47,7 @@ export async function POST(req: Request) {
       ["Mobile Number (Mama)", formData.mobileMama || "N/A"],
     ];
 
-    const textMargin = 100; // Margin
+    const textMargin = 100;
     const fontSize = 48;
 
     let maxKeyWidth = 0;
@@ -66,7 +58,7 @@ export async function POST(req: Request) {
 
     fields.forEach(([key, value]) => {
       const keyWidth = font.widthOfTextAtSize(key, fontSize);
-      const keyX = textMargin + (maxKeyWidth - keyWidth); // Align keys
+      const keyX = textMargin + (maxKeyWidth - keyWidth);
 
       page.drawText("•", {
         x: textMargin - 50,
@@ -74,33 +66,36 @@ export async function POST(req: Request) {
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
-      }); // Bullet
+      });
+
       page.drawText(key, {
         x: keyX,
         y,
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
-      }); // Key
+      });
+
       page.drawText(":", {
         x: textMargin + maxKeyWidth + 10,
         y,
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
-      }); // Colon
+      });
+
       page.drawText(value, {
         x: textMargin + maxKeyWidth + 30,
         y,
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
-      }); // Value
+      });
 
       y -= 70;
     });
 
-    // Image handling
+    // Photo
     if (image) {
       try {
         const base64Data = image.split(",")[1];
@@ -115,26 +110,19 @@ export async function POST(req: Request) {
           img = await pdfDoc.embedJpg(imageBytes);
         }
 
-        const naturalWidth = img.width;
-        const naturalHeight = img.height;
-        console.log("Image dimensions:", { naturalWidth, naturalHeight });
-
         const boxX = 1400;
         const boxWidth = 800;
         const boxHeight = 1200;
 
-        const widthRatio = boxWidth / naturalWidth;
-        const heightRatio = boxHeight / naturalHeight;
+        const widthRatio = boxWidth / img.width;
+        const heightRatio = boxHeight / img.height;
         const scale = Math.min(widthRatio, heightRatio, 1);
-        console.log("Scale:", scale);
 
-        const drawWidth = naturalWidth * scale;
-        const drawHeight = naturalHeight * scale;
-        console.log("Draw dimensions:", { drawWidth, drawHeight });
+        const drawWidth = img.width * scale;
+        const drawHeight = img.height * scale;
 
         const xOffset = (boxWidth - drawWidth) / 2;
         const yOffset = (boxHeight - drawHeight) / 2;
-        console.log("Offsets:", { xOffset, yOffset });
 
         const boxY = (1800 - boxHeight) / 2;
 
@@ -143,19 +131,15 @@ export async function POST(req: Request) {
           y: boxY + yOffset,
           width: drawWidth,
           height: drawHeight,
-          opacity: 1,
         });
       } catch (err) {
         console.error("Image error:", err);
       }
     }
 
-    // Generate PDF
+    // ✅ Return PDF as Buffer (works on Netlify)
     const pdfBytes = await pdfDoc.save();
-    const pdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
-
-    console.log("PDF size:", pdfBytes.length);
-    return new NextResponse(pdfBlob, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -164,12 +148,9 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("PDF generation error:", error);
-    return new NextResponse(
-      JSON.stringify({ error: "Failed to generate PDF" }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+    return NextResponse.json(
+      { error: "Failed to generate PDF" },
+      { status: 500 }
     );
   }
 }
