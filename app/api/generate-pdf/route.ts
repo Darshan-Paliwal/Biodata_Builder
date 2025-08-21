@@ -1,66 +1,72 @@
-// app/api/generate-pdf/route.ts
-
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const { name, email, phone, address, education, skills, experience } =
+      await req.json();
 
-    // Create new PDF
+    // Create a new PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+    const page = pdfDoc.addPage([600, 800]);
 
-    // Load font
+    // Fonts and styling
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontSize = 14;
+    const fontSize = 12;
+    const marginX = 70;
+    let y = 750;
 
     // Title
     page.drawText("Biodata", {
-      x: 230,
-      y: 800,
-      size: 24,
+      x: 250,
+      y,
+      size: 22,
       font,
       color: rgb(0, 0, 0),
     });
 
-    // Margin & starting Y
-    const textMargin = 80;
-    let y = 740;
+    y -= 50;
 
-    // Extract fields
-    const fields: [string, string][] = Object.entries(body);
+    // All fields
+    const fields: [string, string][] = [
+      ["Name", name || ""],
+      ["Email", email || ""],
+      ["Phone", phone || ""],
+      ["Address", address || ""],
+      ["Education", education || ""],
+      ["Skills", skills || ""],
+      ["Experience", experience || ""],
+    ];
 
-    // Find the widest key
+    // Calculate max key width
     const maxKeyWidth = Math.max(
       ...fields.map(([key]) => font.widthOfTextAtSize(key, fontSize))
     );
 
-    // Fixed alignment positions
-    const colonX = textMargin + maxKeyWidth + 10;
+    const colonX = marginX + maxKeyWidth + 10;
     const valueX = colonX + 20;
 
-    // Draw each field
+    // Draw each field aligned properly
     fields.forEach(([key, value]) => {
-      // Bullet
+      // bullet
       page.drawText("•", {
-        x: textMargin - 20,
+        x: marginX - 20,
         y,
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
       });
 
-      // Key
+      // key
       page.drawText(key, {
-        x: textMargin,
+        x: marginX,
         y,
         font,
         size: fontSize,
         color: rgb(0, 0, 0),
       });
 
-      // Colon (aligned)
+      // colon (aligned)
       page.drawText(":", {
         x: colonX,
         y,
@@ -69,7 +75,7 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      // Value (aligned)
+      // value (aligned)
       page.drawText(value, {
         x: valueX,
         y,
@@ -78,31 +84,27 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      // Move to next line
       y -= 40;
     });
 
     // Footer
-    const footerText = "Created by Darshan Paliwal";
-    const footerLink = "darshanpaliwal.netlify.app";
-
-    page.drawText(footerText, {
-      x: 80,
-      y: 40,
+    y = 50;
+    page.drawText("Created by Darshan Paliwal", {
+      x: marginX,
+      y,
       font,
-      size: 12,
-      color: rgb(0.2, 0.2, 0.2),
+      size: 10,
+      color: rgb(0.2, 0.2, 0.7), // bluish text
+    });
+    page.drawText(" → darshanpaliwal.netlify.app", {
+      x: marginX + 140,
+      y,
+      font,
+      size: 10,
+      color: rgb(0, 0, 0),
     });
 
-    page.drawText(footerLink, {
-      x: 80 + font.widthOfTextAtSize(footerText, 12) + 10,
-      y: 40,
-      font,
-      size: 12,
-      color: rgb(0, 0, 1), // blue for link
-    });
-
-    // Save PDF
+    // Serialize PDF
     const pdfBytes = await pdfDoc.save();
 
     return new NextResponse(pdfBytes, {
@@ -112,8 +114,8 @@ export async function POST(req: Request) {
         "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
-  } catch (error) {
-    console.error("Error generating PDF:", error);
+  } catch (err) {
+    console.error("PDF generation failed:", err);
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 }
