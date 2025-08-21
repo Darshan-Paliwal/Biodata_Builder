@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     // Heading centered
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
-    const titleWidth = fontBold.widthOfTextAtSize(title, 52); // Slightly increased font size
+    const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     const titleX = (width - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
@@ -50,16 +50,16 @@ export async function POST(req: Request) {
       "Mobile Number (Mama)",
     ];
 
-    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32))); // Slightly increased font size
+    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32)));
 
     let yPos = height - 200;
-    const lineHeight = 62; // Slightly increased line height
+    const lineHeight = 62;
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
         x: 100,
         y: yPos,
-        size: 32, // Slightly increased font size
+        size: 32,
         font,
         color: rgb(0, 0, 0),
       });
@@ -129,10 +129,10 @@ export async function POST(req: Request) {
         throw new Error("Unsupported image format");
       }
 
-      const imgDims = embeddedImage.scale(0.75); // Increased scale for larger image area
+      const imgDims = embeddedImage.scale(0.75);
       page.drawImage(embeddedImage, {
-        x: 1400, // Adjusted x to increase image area
-        y: yPos + 400, // Adjusted y to increase image area
+        x: 1400,
+        y: 400, // Adjusted y to match the marked area
         width: imgDims.width,
         height: imgDims.height,
       });
