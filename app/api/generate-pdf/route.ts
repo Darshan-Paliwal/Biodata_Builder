@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32)));
 
-    let yPos = height - 200;
+    let yPos = height - 300; // Adjusted to start text slightly down
     const lineHeight = 62;
 
     const drawField = (label: string, value: string) => {
@@ -132,7 +132,7 @@ export async function POST(req: Request) {
       const imgDims = embeddedImage.scale(0.75);
       page.drawImage(embeddedImage, {
         x: 1400,
-        y: 400, // Adjusted y to match the marked area
+        y: 500, // Adjusted y to move image slightly up within marked area
         width: imgDims.width,
         height: imgDims.height,
       });
