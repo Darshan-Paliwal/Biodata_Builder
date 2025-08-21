@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     let yPos = height - 250;
     const lineHeight = 62;
     const wrappedLineHeight = 40;
-    const valueMaxWidth = 1550 - (150 + maxLabelWidth + 20);
+    const valueMaxWidth = 1400 - (150 + maxLabelWidth + 20); // Reduced to prevent overlap with image
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
@@ -159,9 +159,9 @@ export async function POST(req: Request) {
         throw new Error("Unsupported image format");
       }
 
-      const imgDims = embeddedImage.scale(0.75);
+      const imgDims = embeddedImage.scale(0.65); // Reduced scale to prevent touching right edge
       page.drawImage(embeddedImage, {
-        x: 1600,
+        x: 1650, // Adjusted x to ensure margin from right edge
         y: 400,
         width: imgDims.width,
         height: imgDims.height,
