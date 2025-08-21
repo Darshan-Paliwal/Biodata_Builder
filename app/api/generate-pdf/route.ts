@@ -101,29 +101,19 @@ export async function POST(req: Request) {
       const valueX = colonX + 20;
       const lines = wrapText(value || "-", valueMaxWidth, font, 32);
 
-      // Only adjust yPos if there are multiple lines
-      if (lines.length > 1) {
-        for (let i = 0; i < lines.length; i++) {
-          page.drawText(lines[i], {
-            x: valueX,
-            y: yPos,
-            size: 32,
-            font,
-            color: rgb(0, 0, 0),
-          });
-          if (i < lines.length - 1) yPos -= 40; // Wrap to next line only if needed
-        }
-        yPos -= lineHeight - 40 * (lines.length - 1);
-      } else {
-        page.drawText(lines[0], {
+      // Draw each line with proper spacing
+      for (let i = 0; i < lines.length; i++) {
+        page.drawText(lines[i], {
           x: valueX,
-          y: yPos,
+          y: yPos - (i * 40), // Adjust Y position for each wrapped line
           size: 32,
           font,
           color: rgb(0, 0, 0),
         });
-        yPos -= lineHeight;
       }
+
+      // Move yPos down by lineHeight only once per field
+      yPos -= lineHeight + (lines.length - 1) * 40; // Adjust for number of wrapped lines
     };
 
     drawField("Name", formData.name || "-");
@@ -163,10 +153,10 @@ export async function POST(req: Request) {
       }
 
       const imgDims = embeddedImage.scale(0.65);
-      const imageX = textAreaWidth + 100; // Moved slightly more to the right
+      const imageX = textAreaWidth + 150; // Moved further right
       page.drawImage(embeddedImage, {
         x: imageX,
-        y: 400,
+        y: 500, // Moved slightly up to original position
         width: imgDims.width,
         height: imgDims.height,
       });
