@@ -14,13 +14,13 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Heading centered
+    // Heading centered, slightly down
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     const titleX = (width - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
-      y: height - 100,
+      y: height - 150, // Moved slightly down
       size: 52,
       font: fontBold,
       color: rgb(0, 0, 0),
@@ -52,7 +52,7 @@ export async function POST(req: Request) {
 
     const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32)));
 
-    let yPos = height - 300; // Adjusted to start text slightly down
+    let yPos = height - 250; // Adjusted to move text slightly up
     const lineHeight = 62;
 
     const drawField = (label: string, value: string) => {
@@ -131,8 +131,8 @@ export async function POST(req: Request) {
 
       const imgDims = embeddedImage.scale(0.75);
       page.drawImage(embeddedImage, {
-        x: 1400,
-        y: 500, // Adjusted y to move image slightly up within marked area
+        x: 1500, // Moved right to prevent text overlap
+        y: 500,
         width: imgDims.width,
         height: imgDims.height,
       });
