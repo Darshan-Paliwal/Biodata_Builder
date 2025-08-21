@@ -1,123 +1,95 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, rgb } from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
+// API route for POST /api/generate-pdf
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const { name, dob, gender, address, phone, email, education, skills, imageBase64 } =
+      await req.json();
 
-    // Create a new PDF
+    // Create new PDF
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([595, 842]); // A4 size
+    const { height } = page.getSize();
 
-    const { name, email, phone, address, skills, experience, education } = body;
-
-    let y = 800;
+    // Fonts
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
     // Title
-    page.drawText("Biodata", {
+    page.drawText("Bio Data", {
       x: 50,
-      y,
-      size: 24,
-      color: rgb(0, 0.53, 0.71),
+      y: height - 60,
+      size: 22,
+      font: fontBold,
+      color: rgb(0, 0, 0),
     });
-    y -= 40;
 
-    // Name
-    if (name) {
-      page.drawText(`Name: ${name}`, { x: 50, y, size: 14 });
-      y -= 20;
-    }
+    // Text start position
+    let yPos = height - 100;
+    const lineHeight = 25;
 
-    // Email
-    if (email) {
-      page.drawText(`Email: ${email}`, { x: 50, y, size: 14 });
-      y -= 20;
-    }
-
-    // Phone
-    if (phone) {
-      page.drawText(`Phone: ${phone}`, { x: 50, y, size: 14 });
-      y -= 20;
-    }
-
-    // Address
-    if (address) {
-      page.drawText(`Address: ${address}`, { x: 50, y, size: 14 });
-      y -= 30;
-    }
-
-    // Skills
-    if (skills && skills.length > 0) {
-      page.drawText("Skills:", { x: 50, y, size: 16, color: rgb(0, 0, 0.8) });
-      y -= 20;
-      skills.forEach((skill: string) => {
-        page.drawText(`- ${skill}`, { x: 70, y, size: 12 });
-        y -= 15;
-      });
-      y -= 20;
-    }
-
-    // Experience
-    if (experience && experience.length > 0) {
-      page.drawText("Experience:", {
+    // Helper function to align "Label : Value"
+    function drawField(label: string, value: string) {
+      const labelWidth = fontBold.widthOfTextAtSize(label + " :", 12);
+      page.drawText(label + " :", {
         x: 50,
-        y,
-        size: 16,
-        color: rgb(0, 0, 0.8),
+        y: yPos,
+        size: 12,
+        font: fontBold,
+        color: rgb(0, 0, 0),
       });
-      y -= 20;
-      experience.forEach((exp: { role: string; company: string; years: string }) => {
-        page.drawText(`${exp.role} at ${exp.company} (${exp.years})`, {
-          x: 70,
-          y,
-          size: 12,
-        });
-        y -= 15;
+      page.drawText(value || "-", {
+        x: 50 + labelWidth + 10,
+        y: yPos,
+        size: 12,
+        font,
+        color: rgb(0, 0, 0),
       });
-      y -= 20;
+      yPos -= lineHeight;
     }
 
-    // Education
-    if (education && education.length > 0) {
-      page.drawText("Education:", {
-        x: 50,
-        y,
-        size: 16,
-        color: rgb(0, 0, 0.8),
-      });
-      y -= 20;
-      education.forEach((edu: { degree: string; institution: string; year: string }) => {
-        page.drawText(`${edu.degree}, ${edu.institution} (${edu.year})`, {
-          x: 70,
-          y,
-          size: 12,
-        });
-        y -= 15;
+    // Draw fields (left side)
+    drawField("Name", name);
+    drawField("DOB", dob);
+    drawField("Gender", gender);
+    drawField("Address", address);
+    drawField("Phone", phone);
+    drawField("Email", email);
+    drawField("Education", education);
+    drawField("Skills", skills);
+
+    // Insert image (right side)
+    if (imageBase64) {
+      const imageBytes = Uint8Array.from(
+        atob(imageBase64.split(",")[1]),
+        (c) => c.charCodeAt(0)
+      );
+
+      let embeddedImage;
+      if (imageBase64.startsWith("data:image/jpeg")) {
+        embeddedImage = await pdfDoc.embedJpg(imageBytes);
+      } else {
+        embeddedImage = await pdfDoc.embedPng(imageBytes);
+      }
+
+      const imgDims = embeddedImage.scale(0.25); // resize
+      page.drawImage(embeddedImage, {
+        x: 400,
+        y: height - 250,
+        width: imgDims.width,
+        height: imgDims.height,
       });
     }
 
-    // Footer
-    page.drawText("Created by Darshan Paliwal", {
-      x: 50,
-      y: 50,
-      size: 12,
-      color: rgb(0.5, 0.5, 0.5),
-    });
-    page.drawText("darshanpaliwal.netlify.app", {
-      x: 50,
-      y: 35,
-      size: 12,
-      color: rgb(0.2, 0.4, 0.8),
-    });
-
-    // Save the PDF
+    // Save PDF
     const pdfBytes = await pdfDoc.save();
 
-    // ✅ FIX: wrap Uint8Array in Buffer (valid BodyInit)
     return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
+        "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
   } catch (error) {
