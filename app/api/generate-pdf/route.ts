@@ -8,13 +8,12 @@ export async function POST(req: Request) {
     const imageBase64 = body.image || null;
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // Horizontal orientation: width=2400, height=1800
+    const page = pdfDoc.addPage([2400, 1800]);
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Heading centered, slightly down
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     const titleX = (width - titleWidth) / 2;
@@ -26,7 +25,6 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    // Labels for alignment
     const labels = [
       "Name",
       "Birth Name",
@@ -54,6 +52,25 @@ export async function POST(req: Request) {
 
     let yPos = height - 250;
     const lineHeight = 62;
+    const wrappedLineHeight = 40;
+    const valueMaxWidth = 1550 - (150 + maxLabelWidth + 20);
+
+    function wrapText(text: string, maxWidth: number, font: any, size: number): string[] {
+      const words = text.split(' ');
+      const lines: string[] = [];
+      let currentLine = '';
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
+          currentLine = testLine;
+        } else {
+          if (currentLine) lines.push(currentLine);
+          currentLine = word;
+        }
+      }
+      if (currentLine) lines.push(currentLine);
+      return lines;
+    }
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
@@ -82,7 +99,9 @@ export async function POST(req: Request) {
       });
 
       const valueX = colonX + 20;
-      page.drawText(value || "-", {
+      const lines = wrapText(value || "-", valueMaxWidth, font, 32);
+
+      page.drawText(lines[0], {
         x: valueX,
         y: yPos,
         size: 32,
@@ -90,7 +109,18 @@ export async function POST(req: Request) {
         color: rgb(0, 0, 0),
       });
 
-      yPos -= lineHeight;
+      for (let i = 1; i < lines.length; i++) {
+        yPos -= wrappedLineHeight;
+        page.drawText(lines[i], {
+          x: valueX,
+          y: yPos,
+          size: 32,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      yPos -= lineHeight - wrappedLineHeight * (lines.length - 1);
     };
 
     drawField("Name", formData.name || "-");
@@ -131,8 +161,8 @@ export async function POST(req: Request) {
 
       const imgDims = embeddedImage.scale(0.75);
       page.drawImage(embeddedImage, {
-        x: 1600, // Moved further right to avoid text overlap
-        y: 600, // Moved slightly down
+        x: 1600,
+        y: 400,
         width: imgDims.width,
         height: imgDims.height,
       });
