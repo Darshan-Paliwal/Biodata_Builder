@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const imageBase64 = body.image || null;
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595, 842]);
+    const page = pdfDoc.addPage([2400, 1800]); // Horizontal orientation: width=2400, height=1800
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -16,12 +16,12 @@ export async function POST(req: Request) {
 
     // Heading centered
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
-    const titleWidth = fontBold.widthOfTextAtSize(title, 22);
+    const titleWidth = fontBold.widthOfTextAtSize(title, 50); // Increased font size for larger page
     const titleX = (width - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
-      y: height - 60,
-      size: 22,
+      y: height - 100,
+      size: 50,
       font: fontBold,
       color: rgb(0, 0, 0),
     });
@@ -50,42 +50,42 @@ export async function POST(req: Request) {
       "Mobile Number (Mama)",
     ];
 
-    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 12)));
+    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 30))); // Increased font size
 
-    let yPos = height - 100;
-    const lineHeight = 25;
+    let yPos = height - 200;
+    const lineHeight = 60; // Increased line height for larger page
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
-        x: 40,
+        x: 100, // Adjusted for larger page
         y: yPos,
-        size: 12,
+        size: 30, // Increased font size
         font,
         color: rgb(0, 0, 0),
       });
 
       page.drawText(label, {
-        x: 50,
+        x: 150, // Adjusted for larger page
         y: yPos,
-        size: 12,
+        size: 30,
         font: fontBold,
         color: rgb(0, 0, 0),
       });
 
-      const colonX = 50 + maxLabelWidth;
+      const colonX = 150 + maxLabelWidth;
       page.drawText(" :", {
         x: colonX,
         y: yPos,
-        size: 12,
+        size: 30,
         font: fontBold,
         color: rgb(0, 0, 0),
       });
 
-      const valueX = colonX + 10;
+      const valueX = colonX + 20; // Adjusted spacing
       page.drawText(value || "-", {
         x: valueX,
         y: yPos,
-        size: 12,
+        size: 30,
         font,
         color: rgb(0, 0, 0),
       });
@@ -129,10 +129,10 @@ export async function POST(req: Request) {
         throw new Error("Unsupported image format");
       }
 
-      const imgDims = embeddedImage.scale(0.25);
+      const imgDims = embeddedImage.scale(0.5); // Adjusted scale for larger page
       page.drawImage(embeddedImage, {
-        x: 400,
-        y: yPos + 150,
+        x: 1500, // Adjusted for larger page
+        y: yPos + 300, // Adjusted for larger page
         width: imgDims.width,
         height: imgDims.height,
       });
