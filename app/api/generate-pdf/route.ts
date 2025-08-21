@@ -1,124 +1,127 @@
 import { NextResponse } from "next/server";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { PDFDocument, rgb } from "pdf-lib";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, phone, address, education, skills, experience } =
-      await req.json();
+    const body = await req.json();
 
     // Create a new PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([600, 800]);
+    const page = pdfDoc.addPage([595, 842]); // A4 size
 
-    // Fonts and styling
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const fontSize = 12;
-    const marginX = 70;
-    let y = 750;
+    const { name, email, phone, address, skills, experience, education } = body;
+
+    let y = 800;
 
     // Title
     page.drawText("Biodata", {
-      x: 250,
+      x: 50,
       y,
-      size: 22,
-      font,
-      color: rgb(0, 0, 0),
+      size: 24,
+      color: rgb(0, 0.53, 0.71),
     });
+    y -= 40;
 
-    y -= 50;
+    // Name
+    if (name) {
+      page.drawText(`Name: ${name}`, { x: 50, y, size: 14 });
+      y -= 20;
+    }
 
-    // All fields
-    const fields: [string, string][] = [
-      ["Name", name || ""],
-      ["Email", email || ""],
-      ["Phone", phone || ""],
-      ["Address", address || ""],
-      ["Education", education || ""],
-      ["Skills", skills || ""],
-      ["Experience", experience || ""],
-    ];
+    // Email
+    if (email) {
+      page.drawText(`Email: ${email}`, { x: 50, y, size: 14 });
+      y -= 20;
+    }
 
-    // Calculate max key width
-    const maxKeyWidth = Math.max(
-      ...fields.map(([key]) => font.widthOfTextAtSize(key, fontSize))
-    );
+    // Phone
+    if (phone) {
+      page.drawText(`Phone: ${phone}`, { x: 50, y, size: 14 });
+      y -= 20;
+    }
 
-    const colonX = marginX + maxKeyWidth + 10;
-    const valueX = colonX + 20;
+    // Address
+    if (address) {
+      page.drawText(`Address: ${address}`, { x: 50, y, size: 14 });
+      y -= 30;
+    }
 
-    // Draw each field aligned properly
-    fields.forEach(([key, value]) => {
-      // bullet
-      page.drawText("•", {
-        x: marginX - 20,
-        y,
-        font,
-        size: fontSize,
-        color: rgb(0, 0, 0),
+    // Skills
+    if (skills && skills.length > 0) {
+      page.drawText("Skills:", { x: 50, y, size: 16, color: rgb(0, 0, 0.8) });
+      y -= 20;
+      skills.forEach((skill: string) => {
+        page.drawText(`- ${skill}`, { x: 70, y, size: 12 });
+        y -= 15;
       });
+      y -= 20;
+    }
 
-      // key
-      page.drawText(key, {
-        x: marginX,
+    // Experience
+    if (experience && experience.length > 0) {
+      page.drawText("Experience:", {
+        x: 50,
         y,
-        font,
-        size: fontSize,
-        color: rgb(0, 0, 0),
+        size: 16,
+        color: rgb(0, 0, 0.8),
       });
+      y -= 20;
+      experience.forEach((exp: { role: string; company: string; years: string }) => {
+        page.drawText(`${exp.role} at ${exp.company} (${exp.years})`, {
+          x: 70,
+          y,
+          size: 12,
+        });
+        y -= 15;
+      });
+      y -= 20;
+    }
 
-      // colon (aligned)
-      page.drawText(":", {
-        x: colonX,
+    // Education
+    if (education && education.length > 0) {
+      page.drawText("Education:", {
+        x: 50,
         y,
-        font,
-        size: fontSize,
-        color: rgb(0, 0, 0),
+        size: 16,
+        color: rgb(0, 0, 0.8),
       });
-
-      // value (aligned)
-      page.drawText(value, {
-        x: valueX,
-        y,
-        font,
-        size: fontSize,
-        color: rgb(0, 0, 0),
+      y -= 20;
+      education.forEach((edu: { degree: string; institution: string; year: string }) => {
+        page.drawText(`${edu.degree}, ${edu.institution} (${edu.year})`, {
+          x: 70,
+          y,
+          size: 12,
+        });
+        y -= 15;
       });
-
-      y -= 40;
-    });
+    }
 
     // Footer
-    y = 50;
     page.drawText("Created by Darshan Paliwal", {
-      x: marginX,
-      y,
-      font,
-      size: 10,
-      color: rgb(0.2, 0.2, 0.7), // bluish text
+      x: 50,
+      y: 50,
+      size: 12,
+      color: rgb(0.5, 0.5, 0.5),
     });
-    page.drawText(" → darshanpaliwal.netlify.app", {
-      x: marginX + 140,
-      y,
-      font,
-      size: 10,
-      color: rgb(0, 0, 0),
+    page.drawText("darshanpaliwal.netlify.app", {
+      x: 50,
+      y: 35,
+      size: 12,
+      color: rgb(0.2, 0.4, 0.8),
     });
 
-    // Serialize PDF
+    // Save the PDF
     const pdfBytes = await pdfDoc.save();
 
-    return new NextResponse(pdfBytes, {
+    // ✅ FIX: wrap Uint8Array in Buffer (valid BodyInit)
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
-  } catch (err) {
-    console.error("PDF generation failed:", err);
-    return NextResponse.json(
-      { error: "Failed to generate PDF" },
-      { status: 500 }
-    );
+  } catch (error) {
+    console.error("PDF generation error:", error);
+    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
   }
 }
