@@ -1,6 +1,23 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
+const wrapText = (text: string, maxWidth: number, font: any, size: number): string[] => {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines;
+};
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -54,23 +71,6 @@ export async function POST(req: Request) {
     const lineHeight = 62;
     const wrappedLineHeight = 40;
     const valueMaxWidth = 1550 - (150 + maxLabelWidth + 20);
-
-    function wrapText(text: string, maxWidth: number, font: any, size: number): string[] {
-      const words = text.split(' ');
-      const lines: string[] = [];
-      let currentLine = '';
-      for (const word of words) {
-        const testLine = currentLine ? `${currentLine} ${word}` : word;
-        if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
-          currentLine = testLine;
-        } else {
-          if (currentLine) lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-      if (currentLine) lines.push(currentLine);
-      return lines;
-    }
 
     const drawField = (label: string, value: string) => {
       page.drawText("•", {
