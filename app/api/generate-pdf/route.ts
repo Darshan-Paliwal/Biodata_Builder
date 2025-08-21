@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     let yPos = height - 100;
     const lineHeight = 25;
 
-    function drawField(label: string, value: string) {
+    const drawField = (label: string, value: string) => {
       page.drawText("•", {
         x: 40,
         y: yPos,
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
       });
 
       yPos -= lineHeight;
-    }
+    };
 
     drawField("Name", formData.name || "-");
     drawField("Birth Name", formData.birthName || "-");
