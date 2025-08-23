@@ -46,45 +46,11 @@ export async function POST(req: Request) {
     const formData = body?.formData ?? {};
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // large canvas
+    const page = pdfDoc.addPage([2400, 1800]);
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-
-    // ---------- Pre-embed image ----------
-    let embeddedImage: any = null;
-    let hasImage = false;
-
-    const imageX = 1550;
-    const imageY = 500;
-
-    let imgWidth = 0;
-    let imgHeight = 0;
-    let imageTop = 0;
-    let imageBottom = 0;
-
-    if (formData.image) {
-      const base64: string = String(formData.image);
-      const commaIdx = base64.indexOf(",");
-      const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
-      const imageBytes = Buffer.from(base64Data, "base64");
-
-      if (base64.startsWith("data:image/jpeg")) {
-        embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else if (base64.startsWith("data:image/png")) {
-        embeddedImage = await pdfDoc.embedPng(imageBytes);
-      }
-
-      if (embeddedImage) {
-        const dims = embeddedImage.scale(0.65);
-        imgWidth = dims.width;
-        imgHeight = dims.height;
-        imageTop = imageY + imgHeight;
-        imageBottom = imageY;
-        hasImage = true;
-      }
-    }
 
     // ---------- Title ----------
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
@@ -105,16 +71,8 @@ export async function POST(req: Request) {
     const colonX = 650;
     const valueX = colonX + 30;
     const rightMargin = 100;
-    const gutter = 40;
 
-    const getValueMaxWidth = () => {
-      const withinImageBand = hasImage && yPos <= imageTop && yPos >= imageBottom;
-      if (withinImageBand) {
-        const narrow = imageX - gutter - valueX;
-        return Math.max(200, narrow);
-      }
-      return width - rightMargin - valueX;
-    };
+    const getValueMaxWidth = () => width - rightMargin - valueX;
 
     const drawValueLines = (value: string) => {
       const lines = wrapText(String(value ?? ""), getValueMaxWidth(), font, 32);
@@ -187,19 +145,37 @@ export async function POST(req: Request) {
       if (lbl && val) drawField(lbl, val);
     }
 
-    // ---------- Draw image ----------
-    if (hasImage && embeddedImage) {
-      page.drawImage(embeddedImage, {
-        x: imageX,
-        y: imageY,
-        width: imgWidth,
-        height: imgHeight,
-      });
+    // ---------- Draw image BELOW all text ----------
+    if (formData.image) {
+      const base64: string = String(formData.image);
+      const commaIdx = base64.indexOf(",");
+      const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
+      const imageBytes = Buffer.from(base64Data, "base64");
+
+      let embeddedImage: any = null;
+      if (base64.startsWith("data:image/jpeg")) {
+        embeddedImage = await pdfDoc.embedJpg(imageBytes);
+      } else if (base64.startsWith("data:image/png")) {
+        embeddedImage = await pdfDoc.embedPng(imageBytes);
+      }
+
+      if (embeddedImage) {
+        const imgWidth = 400;
+        const imgHeight = (embeddedImage.height / embeddedImage.width) * imgWidth;
+
+        // place image below the last text
+        page.drawImage(embeddedImage, {
+          x: width - imgWidth - 100,
+          y: yPos - imgHeight - 50, // below text
+          width: imgWidth,
+          height: imgHeight,
+        });
+      }
     }
 
     // ---------- Return PDF ----------
     const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = Buffer.from(pdfBytes); // ✅ FIX for Netlify
+    const pdfBuffer = Buffer.from(pdfBytes);
 
     return new NextResponse(pdfBuffer, {
       status: 200,
