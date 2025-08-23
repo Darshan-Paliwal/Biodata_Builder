@@ -22,7 +22,6 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const formData = body.formData || {};
-    const imageBase64 = body.image || null;
 
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([2400, 1800]);
@@ -42,167 +41,76 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    const labels = [
-      "Name",
-      "Birth Name",
-      "DOB",
-      "Birth Time",
-      "Birth Place",
-      "District",
-      "Gotra",
-      "Height",
-      "Blood Group",
-      "Qualification",
-      "Occupation",
-      "Father Name",
-      "Mother Name",
-      "Mother Occupation",
-      "Sibling", // Replaced "Sister Name" with "Sibling"
-      "Residence",
-      "Permanent Address",
-      "Mobile Number (Mother)",
-      "Mobile Number (Mama)",
-    ];
-
-    const maxLabelWidth = Math.max(...labels.map((label) => fontBold.widthOfTextAtSize(label, 32)));
-
     let yPos = height - 250;
     const lineHeight = 62;
     const textAreaWidth = 1400;
-    const valueMaxWidth = textAreaWidth - (150 + maxLabelWidth + 20);
+    const valueMaxWidth = textAreaWidth - 170; // Adjusted for consistent colon alignment
 
     const drawField = (label: string, value: string) => {
-      page.drawText("•", {
-        x: 100,
-        y: yPos,
-        size: 32,
-        font,
-        color: rgb(0, 0, 0),
-      });
-
-      page.drawText(label, {
-        x: 150,
-        y: yPos,
-        size: 32,
-        font: fontBold,
-        color: rgb(0, 0, 0),
-      });
-
-      const colonX = 150 + maxLabelWidth;
-      page.drawText(" :", {
-        x: colonX,
-        y: yPos,
-        size: 32,
-        font: fontBold,
-        color: rgb(0, 0, 0),
-      });
-
+      if (!value || value === "-") return; // Skip empty fields
+      page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
+      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+      const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
+      page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
       const valueX = colonX + 20;
-      const lines = wrapText(value || "-", valueMaxWidth, font, 32);
-
+      const lines = wrapText(value, valueMaxWidth, font, 32);
       for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], {
-          x: valueX,
-          y: yPos - (i * 40),
-          size: 32,
-          font,
-          color: rgb(0, 0, 0),
-        });
+        page.drawText(lines[i], { x: valueX, y: yPos - (i * 40), size: 32, font, color: rgb(0, 0, 0) });
       }
-
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
-    // Handle Sibling field dynamically based on selection
     const drawSiblingField = () => {
-      const siblingType = formData.siblingType || "Sister"; // Default to "Sister" if not provided
-      const siblingName = formData.siblingName || "-";
-      const label = `${siblingType} Name`; // Dynamically set label based on dropdown
-
-      page.drawText("•", {
-        x: 100,
-        y: yPos,
-        size: 32,
-        font,
-        color: rgb(0, 0, 0),
-      });
-
-      page.drawText(label, {
-        x: 150,
-        y: yPos,
-        size: 32,
-        font: fontBold,
-        color: rgb(0, 0, 0),
-      });
-
+      const siblingType = formData.siblingType || "Sister";
+      const siblingName = formData.siblingName || "";
+      if (!siblingName) return; // Skip if no name provided
+      const label = `${siblingType} Name`;
+      page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
+      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
       const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
-      page.drawText(" :", {
-        x: colonX,
-        y: yPos,
-        size: 32,
-        font: fontBold,
-        color: rgb(0, 0, 0),
-      });
-
+      page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
       const valueX = colonX + 20;
       const lines = wrapText(siblingName, valueMaxWidth, font, 32);
-
       for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], {
-          x: valueX,
-          y: yPos - (i * 40),
-          size: 32,
-          font,
-          color: rgb(0, 0, 0),
-        });
+        page.drawText(lines[i], { x: valueX, y: yPos - (i * 40), size: 32, font, color: rgb(0, 0, 0) });
       }
-
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
-    drawField("Name", formData.name || "-");
-    drawField("Birth Name", formData.birthName || "-");
-    drawField("DOB", formData.dob || "-");
-    drawField("Birth Time", formData.birthTime || "-");
-    drawField("Birth Place", formData.birthPlace || "-");
-    drawField("District", formData.district || "-");
-    drawField("Gotra", formData.gotra || "-");
-    drawField("Height", formData.height || "-");
-    drawField("Blood Group", formData.bloodGroup || "-");
-    drawField("Qualification", formData.qualification || "-");
-    drawField("Occupation", formData.occupation || "-");
-    drawField("Father Name", formData.fatherName || "-");
-    drawField("Mother Name", formData.motherName || "-");
-    drawField("Mother Occupation", formData.motherOccupation || "-");
-    drawSiblingField(); // Use dynamic sibling field
-    drawField("Residence", formData.residence || "-");
-    drawField("Permanent Address", formData.permanentAddress || "-");
-    drawField("Mobile Number (Mother)", formData.mobileMother || "-");
-    drawField("Mobile Number (Mama)", formData.mobileMama || "-");
+    // Only draw fields that have values
+    if (formData.name) drawField("Name", formData.name);
+    if (formData.birthName) drawField("Birth Name", formData.birthName);
+    if (formData.dob) drawField("DOB", formData.dob);
+    if (formData.birthTime) drawField("Birth Time", formData.birthTime);
+    if (formData.birthPlace) drawField("Birth Place", formData.birthPlace);
+    if (formData.district) drawField("District", formData.district);
+    if (formData.gotra) drawField("Gotra", formData.gotra);
+    if (formData.height) drawField("Height", formData.height);
+    if (formData.bloodGroup) drawField("Blood Group", formData.bloodGroup);
+    if (formData.qualification) drawField("Qualification", formData.qualification);
+    if (formData.occupation) drawField("Occupation", formData.occupation);
+    if (formData.fatherName) drawField("Father Name", formData.fatherName);
+    if (formData.motherName) drawField("Mother Name", formData.motherName);
+    if (formData.motherOccupation) drawField("Mother Occupation", formData.motherOccupation);
+    drawSiblingField(); // Handle sibling separately due to dynamic label
+    if (formData.residence) drawField("Residence", formData.residence);
+    if (formData.permanentAddress) drawField("Permanent Address", formData.permanentAddress);
+    if (formData.mobileMother) drawField("Mobile Number (Mother)", formData.mobileMother);
+    if (formData.mobileMama) drawField("Mobile Number (Mama)", formData.mobileMama);
 
-    if (imageBase64) {
-      const imageBytes = Uint8Array.from(
-        atob(imageBase64.split(",")[1]),
-        (c) => c.charCodeAt(0)
-      );
-
+    if (formData.imageBase64) {
+      const imageBytes = Uint8Array.from(atob(formData.imageBase64.split(",")[1]), (c) => c.charCodeAt(0));
       let embeddedImage;
-      if (imageBase64.startsWith("data:image/jpeg")) {
+      if (formData.imageBase64.startsWith("data:image/jpeg")) {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else if (imageBase64.startsWith("data:image/png")) {
+      } else if (formData.imageBase64.startsWith("data:image/png")) {
         embeddedImage = await pdfDoc.embedPng(imageBytes);
       } else {
         throw new Error("Unsupported image format");
       }
-
       const imgDims = embeddedImage.scale(0.65);
-      const imageX = 1550; // Moved further right
-      page.drawImage(embeddedImage, {
-        x: imageX,
-        y: 500,
-        width: imgDims.width,
-        height: imgDims.height,
-      });
+      const imageX = 1550;
+      page.drawImage(embeddedImage, { x: imageX, y: 500, width: imgDims.width, height: imgDims.height });
     }
 
     const pdfBytes = await pdfDoc.save();
