@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+type ExtraField = { id: string; label: string; value: string };
+
 export default function Home() {
   const [formData, setFormData] = useState({
     name: "",
@@ -30,6 +32,7 @@ export default function Home() {
     imageBase64: "" as string | null,
   });
 
+  const [extraFields, setExtraFields] = useState<ExtraField[]>([]);
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +62,28 @@ export default function Home() {
     }
   };
 
+  // --- Extra Fields handlers ---
+  const addExtraField = () => {
+    setExtraFields((prev) => [
+      ...prev,
+      { id: crypto.randomUUID(), label: "", value: "" },
+    ]);
+  };
+
+  const updateExtraField = (
+    id: string,
+    key: "label" | "value",
+    value: string
+  ) => {
+    setExtraFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
+    );
+  };
+
+  const removeExtraField = (id: string) => {
+    setExtraFields((prev) => prev.filter((f) => f.id !== id));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -67,6 +92,9 @@ export default function Home() {
       formData: {
         ...formData,
         image: formData.imageBase64 || null,
+        extraFields: extraFields
+          .filter((f) => f.label.trim() || f.value.trim())
+          .map((f) => ({ label: f.label.trim(), value: f.value.trim() })),
       },
     };
 
@@ -94,7 +122,6 @@ export default function Home() {
     <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
       <h1>Bio Data Form</h1>
       <form onSubmit={handleSubmit}>
-        {/* Rest fields same as before */}
         <label>
           Name:
           <input type="text" name="name" value={formData.name} onChange={handleChange} />
@@ -162,7 +189,12 @@ export default function Home() {
         <br />
         <label>
           Mother Occupation:
-          <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} />
+          <input
+            type="text"
+            name="motherOccupation"
+            value={formData.motherOccupation}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
@@ -187,11 +219,16 @@ export default function Home() {
         <br />
         <label>
           Permanent Address:
-          <input type="text" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
+          <input
+            type="text"
+            name="permanentAddress"
+            value={formData.permanentAddress}
+            onChange={handleChange}
+          />
         </label>
         <br />
 
-        {/* ✅ Updated Mobile Fields */}
+        {/* Mobile Numbers */}
         <h3>Mobile Numbers</h3>
         <label>
           Relation:
@@ -243,32 +280,44 @@ export default function Home() {
           <input type="file" accept="image/*" onChange={handleImageChange} />
         </label>
         <br />
+
+        {/* --- Add More Details --- */}
+        <h3>Add More Details</h3>
+        <div>
+          <button type="button" onClick={addExtraField}>
+            ➕ Add Field
+          </button>
+        </div>
+        <br />
+        {extraFields.map((f) => (
+          <div key={f.id} style={{ marginBottom: "8px" }}>
+            <input
+              type="text"
+              placeholder="Label (e.g. Hobbies)"
+              value={f.label}
+              onChange={(e) => updateExtraField(f.id, "label", e.target.value)}
+              style={{ width: "45%", marginRight: "8px" }}
+            />
+            <input
+              type="text"
+              placeholder="Value (e.g. Reading, Music)"
+              value={f.value}
+              onChange={(e) => updateExtraField(f.id, "value", e.target.value)}
+              style={{ width: "45%", marginRight: "8px" }}
+            />
+            <button type="button" onClick={() => removeExtraField(f.id)}>
+              ❌
+            </button>
+          </div>
+        ))}
+
+        <br />
         <button type="submit" disabled={loading}>
           {loading ? "Generating..." : "Generate PDF"}
         </button>
       </form>
 
-      {/* ✅ Footer */}
-      <footer
-        style={{
-          marginTop: "40px",
-          padding: "15px",
-          textAlign: "center",
-          background: "linear-gradient(to right, #4facfe, #00f2fe)",
-          color: "white",
-          borderRadius: "8px",
-        }}
-      >
-        Created by Darshan Paliwal |{" "}
-        <a
-          href="https://darshanpaliwal.netlify.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "yellow", textDecoration: "underline" }}
-        >
-          Portfolio
-        </a>
-      </footer>
+      {/* ⛔️ Footer with “Created by … | Portfolio” was intentionally removed as requested */}
     </div>
   );
 }
