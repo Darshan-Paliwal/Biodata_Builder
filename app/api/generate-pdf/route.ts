@@ -1,9 +1,6 @@
 // app/api/generate-pdf/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import PDFDocument from "pdfkit";
-import getStream from "get-stream";
-
-export const runtime = "nodejs";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,28 +32,37 @@ export async function POST(req: NextRequest) {
       imageUrl,
     } = body;
 
-    // Create PDF
-    const doc = new PDFDocument({ size: "A4", margin: 50 });
-    const stream = doc.pipe(getStream.buffer());
+    // Create new PDF
+    const pdfDoc = await PDFDocument.create();
+    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    // Title
-    doc.fontSize(20).text("Biodata", { align: "center" });
-    doc.moveDown(1.5);
+    const { height: pageHeight } = page.getSize();
+    let y = pageHeight - 80;
+    const fontSize = 12;
+
+    // === Title ===
+    page.drawText("Biodata", {
+      x: 250,
+      y,
+      size: 20,
+      font,
+      color: rgb(0, 0, 0),
+    });
+    y -= 50;
 
     // === Layout constants ===
-    const labelX = 70;
-    const colonX = 220; // <-- fixed colon column
-    const valueX = 240; // <-- value starts right after colon
-    let y = 120;
+    const labelX = 60;
+    const colonX = 200; // colons aligned vertically
+    const valueX = 220; // values start after colon
     const lineGap = 25;
 
-    // Helper to align fields horizontally (label : value)
     const drawRow = (label: string, value?: string) => {
       if (!value) return;
-      doc.fontSize(12).text(label, labelX, y);
-      doc.text(":", colonX, y); // all colons aligned here
-      doc.text(value, valueX, y);
-      y += lineGap;
+      page.drawText(label, { x: labelX, y, size: fontSize, font });
+      page.drawText(":", { x: colonX, y, size: fontSize, font });
+      page.drawText(value, { x: valueX, y, size: fontSize, font });
+      y -= lineGap;
     };
 
     // Personal Details
@@ -89,27 +95,33 @@ export async function POST(req: NextRequest) {
     drawRow("Hobbies", hobbies);
     drawRow("Expectations", expectations);
 
-    // === Image on right side ===
+    // === Add Image (right side) ===
     if (imageUrl) {
       try {
         const res = await fetch(imageUrl);
-        const buffer = Buffer.from(await res.arrayBuffer());
+        const buffer = await res.arrayBuffer();
+        const img = await pdfDoc.embedJpg(buffer).catch(async () => {
+          return await pdfDoc.embedPng(buffer);
+        });
 
+        const imgDims = img.scale(0.3);
         const imgX = 380;
-        const imgY = 120;
-        const imgW = 150;
-        const imgH = 180;
+        const imgY = pageHeight - 300;
 
-        doc.image(buffer, imgX, imgY, { width: imgW, height: imgH });
-      } catch (e) {
-        console.error("Image load failed:", e);
+        page.drawImage(img, {
+          x: imgX,
+          y: imgY,
+          width: imgDims.width,
+          height: imgDims.height,
+        });
+      } catch (err) {
+        console.error("Image load failed:", err);
       }
     }
 
-    doc.end();
-    const pdfBuffer = await stream;
-
-    return new NextResponse(pdfBuffer, {
+    // Finalize PDF
+    const pdfBytes = await pdfDoc.save();
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
