@@ -19,13 +19,23 @@ const wrapText = (text: string, maxWidth: number, font: any, size: number): stri
   return lines;
 };
 
+// Convert 24h time -> 12h with AM/PM
+function formatTime(timeStr: string) {
+  if (!timeStr) return "";
+  const [h, m] = timeStr.split(":").map(Number);
+  if (isNaN(h) || isNaN(m)) return timeStr;
+  const hour = h % 12 || 12;
+  const ampm = h >= 12 ? "PM" : "AM";
+  return `${hour.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const formData = body.formData || {};
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // keep your original large canvas
+    const page = pdfDoc.addPage([2400, 1800]);
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -43,25 +53,22 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    // ---- Layout helpers ----
-    let yPos = height - 300;
+    // ---- Layout ----
+    let yPos = height - 350; // start slightly lower
     const lineHeight = 62;
-    const textAreaWidth = 1400;
-    const valueMaxWidth = textAreaWidth - 170;
+    const valueMaxWidth = 1200;
+    const colonX = 650; // fixed colon alignment
+    const valueX = colonX + 30;
 
     const drawField = (label: string, value: string) => {
       if (!value || value === "-") return;
+      page.drawText("•", { x: 100, y: yPos, size: 32, font });
+      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold });
+      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold });
 
-      page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-
-      const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
-      page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-
-      const valueX = colonX + 20;
       const lines = wrapText(String(value), valueMaxWidth, font, 32);
       for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font, color: rgb(0, 0, 0) });
+        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font });
       }
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
@@ -72,48 +79,37 @@ export async function POST(req: Request) {
       if (!siblingName) return;
 
       const label = `${siblingType} Name`;
-      page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+      page.drawText("•", { x: 100, y: yPos, size: 32, font });
+      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold });
+      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold });
 
-      const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
-      page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-
-      const valueX = colonX + 20;
       const lines = wrapText(String(siblingName), valueMaxWidth, font, 32);
       for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font, color: rgb(0, 0, 0) });
+        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font });
       }
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
-    // ✅ Mobile field: "Mobile Number (Person) : Number" (hide empty parentheses)
-    const drawMobileField = (person: string, number: string) => {
-      if (!person && !number) return;
+    const drawMobileField = (relation: string, number: string) => {
+      if (!relation && !number) return;
+      const label = relation ? `Mobile Number (${relation})` : "Mobile Number";
 
-      const hasPerson = !!(person && String(person).trim() !== "");
-      const label = hasPerson ? `Mobile Number (${person})` : `Mobile Number`;
+      page.drawText("•", { x: 100, y: yPos, size: 32, font });
+      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold });
+      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold });
 
-      page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-
-      const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
-      page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-
-      const valueX = colonX + 20;
-      const value = number ? String(number) : "";
-
-      const lines = wrapText(value, valueMaxWidth, font, 32);
+      const lines = wrapText(String(number || ""), valueMaxWidth, font, 32);
       for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font, color: rgb(0, 0, 0) });
+        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font });
       }
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
-    // ---- Draw all fields (same order as your original) ----
+    // ---- Draw all fields ----
     if (formData.name) drawField("Name", formData.name);
     if (formData.birthName) drawField("Birth Name", formData.birthName);
     if (formData.dob) drawField("DOB", formData.dob);
-    if (formData.birthTime) drawField("Birth Time", formData.birthTime);
+    if (formData.birthTime) drawField("Birth Time", formatTime(formData.birthTime));
     if (formData.birthPlace) drawField("Birth Place", formData.birthPlace);
     if (formData.district) drawField("District", formData.district);
     if (formData.gotra) drawField("Gotra", formData.gotra);
@@ -128,9 +124,9 @@ export async function POST(req: Request) {
     if (formData.residence) drawField("Residence", formData.residence);
     if (formData.permanentAddress) drawField("Permanent Address", formData.permanentAddress);
 
-    // 🔁 Use the input person text in parentheses; hide if empty
-    drawMobileField(formData.mobileMotherPerson || "", formData.mobileMother || "");
-    drawMobileField(formData.mobileMamaPerson || "", formData.mobileMama || "");
+    // ✅ Mobile numbers fixed
+    drawMobileField(formData.mobileRelation1, formData.mobileNumber1);
+    drawMobileField(formData.mobileRelation2, formData.mobileNumber2);
 
     // ---- Image ----
     if (formData.image) {
@@ -149,7 +145,12 @@ export async function POST(req: Request) {
 
       const imgDims = embeddedImage.scale(0.65);
       const imageX = 1550;
-      page.drawImage(embeddedImage, { x: imageX, y: 500, width: imgDims.width, height: imgDims.height });
+      page.drawImage(embeddedImage, {
+        x: imageX,
+        y: 500,
+        width: imgDims.width,
+        height: imgDims.height,
+      });
     }
 
     const pdfBytes = await pdfDoc.save();
