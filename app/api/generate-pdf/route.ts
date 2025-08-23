@@ -46,17 +46,16 @@ export async function POST(req: Request) {
     const formData = body?.formData ?? {};
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // large canvas like your original
+    const page = pdfDoc.addPage([2400, 1800]); // large canvas
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // ---------- Pre-embed image (so we can compute wrapping against it) ----------
+    // ---------- Pre-embed image ----------
     let embeddedImage: any = null;
     let hasImage = false;
 
-    // Fixed image placement on the right
     const imageX = 1550;
     const imageY = 500;
 
@@ -69,7 +68,7 @@ export async function POST(req: Request) {
       const base64: string = String(formData.image);
       const commaIdx = base64.indexOf(",");
       const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
-      const imageBytes = Buffer.from(base64Data, "base64"); // Node-safe decode
+      const imageBytes = Buffer.from(base64Data, "base64");
 
       if (base64.startsWith("data:image/jpeg")) {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
@@ -99,23 +98,21 @@ export async function POST(req: Request) {
     });
 
     // ---------- Text layout ----------
-    let yPos = height - 350; // start slightly lower for better look
+    let yPos = height - 350;
     const lineHeight = 62;
     const bulletX = 100;
     const labelX = 150;
-    const colonX = 650; // fixed vertical colon alignment
+    const colonX = 650;
     const valueX = colonX + 30;
     const rightMargin = 100;
-    const gutter = 40; // space between text column and image column
+    const gutter = 40;
 
     const getValueMaxWidth = () => {
-      // While we are vertically overlapping the image area, keep text to the left of the image.
       const withinImageBand = hasImage && yPos <= imageTop && yPos >= imageBottom;
       if (withinImageBand) {
         const narrow = imageX - gutter - valueX;
-        return Math.max(200, narrow); // never let it go too tiny
+        return Math.max(200, narrow);
       }
-      // Otherwise, use full width
       return width - rightMargin - valueX;
     };
 
@@ -178,11 +175,9 @@ export async function POST(req: Request) {
     drawField("Residence", formData.residence);
     drawField("Permanent Address", formData.permanentAddress);
 
-    // Mobiles (front-end sends mobileRelation1/2 + mobileNumber1/2)
     drawMobile(formData.mobileRelation1, formData.mobileNumber1);
     drawMobile(formData.mobileRelation2, formData.mobileNumber2);
 
-    // Extra dynamic fields (array of { label, value })
     const extra: Array<{ label?: string; value?: string }> = Array.isArray(formData.extraFields)
       ? formData.extraFields
       : [];
@@ -192,7 +187,7 @@ export async function POST(req: Request) {
       if (lbl && val) drawField(lbl, val);
     }
 
-    // ---------- Draw image last (so text never renders "over" it) ----------
+    // ---------- Draw image ----------
     if (hasImage && embeddedImage) {
       page.drawImage(embeddedImage, {
         x: imageX,
@@ -202,9 +197,11 @@ export async function POST(req: Request) {
       });
     }
 
+    // ---------- Return PDF ----------
     const pdfBytes = await pdfDoc.save();
+    const pdfBuffer = Buffer.from(pdfBytes); // ✅ FIX for Netlify
 
-    return new NextResponse(pdfBytes, {
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
