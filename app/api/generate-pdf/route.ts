@@ -1,101 +1,118 @@
-import { NextResponse } from "next/server";
-import { PDFDocument, rgb } from "pdf-lib";
+import { NextRequest, NextResponse } from "next/server";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const data = await req.json();
+    const body = await req.json();
 
+    const {
+      fullName,
+      dob,
+      pob,
+      timeOfBirth,
+      height,
+      weight,
+      complexion,
+      religion,
+      caste,
+      gotra,
+      education,
+      occupation,
+      income,
+      fatherName,
+      fatherOccupation,
+      motherName,
+      motherOccupation,
+      address,
+      mobileNumber,
+      relationWithPerson,
+      hobbies,
+      expectations,
+    } = body;
+
+    // Create PDF
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([595, 842]); // A4
+    const page = pdfDoc.addPage([595.28, 841.89]); // A4 size
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    const font = await pdfDoc.embedFont("Helvetica");
-    const fontBold = await pdfDoc.embedFont("Helvetica-Bold");
+    const { height: pageHeight } = page.getSize();
+    const fontSize = 12;
+    let y = pageHeight - 60;
 
-    let yPos = 800;
-    const lineHeight = 50;
-    const valueMaxWidth = 370;
+    // Title
+    page.drawText("Biodata", {
+      x: 230,
+      y,
+      size: 20,
+      font,
+      color: rgb(0, 0, 0),
+    });
 
-    // fixed positions
-    const bulletX = 100;
-    const labelX = 150;
-    const colonX = 400; // ✅ fixed so all colons align
-    const valueX = colonX + 20;
+    y -= 40;
 
-    const wrapText = (text: string, maxWidth: number, font: any, fontSize: number) => {
-      const words = text.split(" ");
-      const lines: string[] = [];
-      let currentLine = words[0];
-
-      for (let i = 1; i < words.length; i++) {
-        const word = words[i];
-        const width = font.widthOfTextAtSize(currentLine + " " + word, fontSize);
-        if (width < maxWidth) {
-          currentLine += " " + word;
-        } else {
-          lines.push(currentLine);
-          currentLine = word;
-        }
-      }
-      lines.push(currentLine);
-      return lines;
-    };
-
-    const drawField = (label: string, value: string) => {
+    // Helper function → align colons vertically
+    const drawAlignedText = (label: string, value: string | undefined) => {
       if (!value) return;
+      const labelX = 60;
+      const colonX = 200;
+      const valueX = 210;
 
-      page.drawText("•", { x: bulletX, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: labelX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+      page.drawText(label, { x: labelX, y, size: fontSize, font });
+      page.drawText(":", { x: colonX, y, size: fontSize, font });
+      page.drawText(value, { x: valueX, y, size: fontSize, font });
 
-      const lines = wrapText(value, valueMaxWidth, font, 32);
-      for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font, color: rgb(0, 0, 0) });
-      }
-
-      yPos -= lineHeight + (lines.length - 1) * 40;
+      y -= 25;
     };
 
-    const drawMobileField = (relation: string, number: string) => {
-      if (!relation && !number) return;
+    // Personal Details
+    drawAlignedText("Full Name", fullName);
+    drawAlignedText("Date of Birth", dob);
+    drawAlignedText("Place of Birth", pob);
+    drawAlignedText("Time of Birth", timeOfBirth);
+    drawAlignedText("Height", height);
+    drawAlignedText("Weight", weight);
+    drawAlignedText("Complexion", complexion);
+    drawAlignedText("Religion", religion);
+    drawAlignedText("Caste", caste);
+    drawAlignedText("Gotra", gotra);
+    drawAlignedText("Education", education);
+    drawAlignedText("Occupation", occupation);
+    drawAlignedText("Income", income);
 
-      const label = relation && relation.trim() !== "" ? `Mobile Number (${relation})` : `Mobile Number`;
+    // Family
+    drawAlignedText("Father's Name", fatherName);
+    drawAlignedText("Father's Occupation", fatherOccupation);
+    drawAlignedText("Mother's Name", motherName);
+    drawAlignedText("Mother's Occupation", motherOccupation);
 
-      page.drawText("•", { x: bulletX, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: labelX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+    // Address + Mobile
+    drawAlignedText("Address", address);
+    drawAlignedText("Mobile Number", mobileNumber);
+    drawAlignedText(
+      "Relation with Mobile Number Person",
+      relationWithPerson
+    );
 
-      const value = number || "";
-      const lines = wrapText(value, valueMaxWidth, font, 32);
-      for (let i = 0; i < lines.length; i++) {
-        page.drawText(lines[i], { x: valueX, y: yPos - i * 40, size: 32, font, color: rgb(0, 0, 0) });
-      }
+    // Extras
+    drawAlignedText("Hobbies", hobbies);
+    drawAlignedText("Expectations", expectations);
 
-      yPos -= lineHeight + (lines.length - 1) * 40;
-    };
-
-    // Fill PDF
-    drawField("Name", data.name);
-    drawField("Email", data.email);
-    drawField("Address", data.address);
-
-    if (data.mobiles && Array.isArray(data.mobiles)) {
-      data.mobiles.forEach((m: any) => {
-        drawMobileField(m.relation, m.number);
-      });
-    }
-
-    drawField("Notes", data.notes);
-
+    // Save PDF
     const pdfBytes = await pdfDoc.save();
-    return new NextResponse(pdfBytes, {
+    const pdfBuffer = Buffer.from(pdfBytes); // Fix for Netlify/Node
+
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'attachment; filename="output.pdf"',
+        "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
   } catch (error) {
-    console.error("PDF generation error:", error);
-    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+    console.error("Error generating PDF:", error);
+    return NextResponse.json(
+      { error: "Failed to generate PDF" },
+      { status: 500 }
+    );
   }
 }
