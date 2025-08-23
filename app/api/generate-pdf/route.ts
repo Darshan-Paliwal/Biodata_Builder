@@ -57,8 +57,7 @@ export async function POST(req: Request) {
       "Father Name",
       "Mother Name",
       "Mother Occupation",
-      "Sister Name",
-      "Sister Qualification",
+      "Sibling", // Replaced "Sister Name" with "Sibling"
       "Residence",
       "Permanent Address",
       "Mobile Number (Mother)",
@@ -69,7 +68,7 @@ export async function POST(req: Request) {
 
     let yPos = height - 250;
     const lineHeight = 62;
-    const textAreaWidth = 1400; // Fixed width for text area
+    const textAreaWidth = 1400;
     const valueMaxWidth = textAreaWidth - (150 + maxLabelWidth + 20);
 
     const drawField = (label: string, value: string) => {
@@ -101,19 +100,64 @@ export async function POST(req: Request) {
       const valueX = colonX + 20;
       const lines = wrapText(value || "-", valueMaxWidth, font, 32);
 
-      // Draw each line with proper spacing
       for (let i = 0; i < lines.length; i++) {
         page.drawText(lines[i], {
           x: valueX,
-          y: yPos - (i * 40), // Adjust Y position for each wrapped line
+          y: yPos - (i * 40),
           size: 32,
           font,
           color: rgb(0, 0, 0),
         });
       }
 
-      // Move yPos down by lineHeight only once per field
-      yPos -= lineHeight + (lines.length - 1) * 40; // Adjust for number of wrapped lines
+      yPos -= lineHeight + (lines.length - 1) * 40;
+    };
+
+    // Handle Sibling field dynamically based on selection
+    const drawSiblingField = () => {
+      const siblingType = formData.siblingType || "Sister"; // Default to "Sister" if not provided
+      const siblingName = formData.siblingName || "-";
+      const label = `${siblingType} Name`; // Dynamically set label based on dropdown
+
+      page.drawText("•", {
+        x: 100,
+        y: yPos,
+        size: 32,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      page.drawText(label, {
+        x: 150,
+        y: yPos,
+        size: 32,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
+
+      const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
+      page.drawText(" :", {
+        x: colonX,
+        y: yPos,
+        size: 32,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
+
+      const valueX = colonX + 20;
+      const lines = wrapText(siblingName, valueMaxWidth, font, 32);
+
+      for (let i = 0; i < lines.length; i++) {
+        page.drawText(lines[i], {
+          x: valueX,
+          y: yPos - (i * 40),
+          size: 32,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
     drawField("Name", formData.name || "-");
@@ -130,8 +174,7 @@ export async function POST(req: Request) {
     drawField("Father Name", formData.fatherName || "-");
     drawField("Mother Name", formData.motherName || "-");
     drawField("Mother Occupation", formData.motherOccupation || "-");
-    drawField("Sister Name", formData.sisterName || "-");
-    drawField("Sister Qualification", formData.sisterQualification || "-");
+    drawSiblingField(); // Use dynamic sibling field
     drawField("Residence", formData.residence || "-");
     drawField("Permanent Address", formData.permanentAddress || "-");
     drawField("Mobile Number (Mother)", formData.mobileMother || "-");
@@ -153,10 +196,10 @@ export async function POST(req: Request) {
       }
 
       const imgDims = embeddedImage.scale(0.65);
-      const imageX = textAreaWidth + 150; // Moved further right
+      const imageX = 1550; // Moved further right
       page.drawImage(embeddedImage, {
         x: imageX,
-        y: 500, // Moved slightly up to original position
+        y: 500,
         width: imgDims.width,
         height: imgDims.height,
       });
