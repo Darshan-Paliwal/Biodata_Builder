@@ -321,12 +321,16 @@ export default function Home() {
 <footer
   style={{
     marginTop: "2rem",
-    width: "100%",
+    width: "95%",
+    marginLeft: "auto",
+    marginRight: "auto",
     background: "linear-gradient(to right, #6366f1, #8b5cf6, #ec4899)", // Indigo → Purple → Pink
     color: "white",
     textAlign: "center",
     padding: "1rem 0",
     fontSize: "0.9rem",
+    borderRadius: "16px", // smooth curved edges
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)", // subtle shadow
   }}
 >
   Created by <span style={{ fontWeight: 600 }}>Darshan Paliwal</span> |{" "}
