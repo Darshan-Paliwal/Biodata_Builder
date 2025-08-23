@@ -1,3 +1,5 @@
+"use client"; // Mark this as a Client Component
+
 import { useState } from 'react';
 
 export default function Home() {
