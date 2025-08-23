@@ -80,7 +80,7 @@ export async function POST(req: Request) {
     let hasImage = false;
 
     const imageX = 1550;
-    const imageY = 600; // ✅ shifted UP by 2px
+    const imageY = 550; // ✅ shifted UP by 2px
 
     let imgWidth = 0;
     let imgHeight = 0;
