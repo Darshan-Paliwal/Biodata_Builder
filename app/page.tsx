@@ -25,6 +25,7 @@ export default function Home() {
     mobileMother: '',
     mobileMama: '',
     image: null as File | null,
+    imageBase64: '' as string | null, // Added to state
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,7 +43,11 @@ export default function Home() {
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, image: file, imageBase64: reader.result as string }));
+        setFormData((prev) => ({
+          ...prev,
+          image: file,
+          imageBase64: reader.result as string,
+        }));
       };
       reader.readAsDataURL(file);
     }
@@ -53,7 +58,7 @@ export default function Home() {
     const formDataToSend = {
       formData: {
         ...formData,
-        image: formData.image ? formData.imageBase64 : null, // Send base64 if image exists
+        image: formData.imageBase64 || null, // Use imageBase64 or null if not set
       },
     };
 
@@ -71,7 +76,7 @@ export default function Home() {
       a.download = 'biodata.pdf';
       a.click();
     } else {
-      console.error('Failed to generate PDF');
+      console.error('Failed to generate PDF:', await response.text());
     }
   };
 
@@ -126,61 +131,32 @@ export default function Home() {
         <br />
         <label>
           Qualification:
-          <input
-            type="text"
-            name="qualification"
-            value={formData.qualification}
-            onChange={handleChange}
-          />
+          <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} />
         </label>
         <br />
         <label>
           Occupation:
-          <input
-            type="text"
-            name="occupation"
-            value={formData.occupation}
-            onChange={handleChange}
-          />
+          <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} />
         </label>
         <br />
         <label>
           Father Name:
-          <input
-            type="text"
-            name="fatherName"
-            value={formData.fatherName}
-            onChange={handleChange}
-          />
+          <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} />
         </label>
         <br />
         <label>
           Mother Name:
-          <input
-            type="text"
-            name="motherName"
-            value={formData.motherName}
-            onChange={handleChange}
-          />
+          <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} />
         </label>
         <br />
         <label>
           Mother Occupation:
-          <input
-            type="text"
-            name="motherOccupation"
-            value={formData.motherOccupation}
-            onChange={handleChange}
-          />
+          <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} />
         </label>
         <br />
         <label>
           Sibling:
-          <select
-            name="siblingType"
-            value={formData.siblingType}
-            onChange={handleSiblingChange}
-          >
+          <select name="siblingType" value={formData.siblingType} onChange={handleSiblingChange}>
             <option value="Brother">Brother</option>
             <option value="Sister">Sister</option>
           </select>
@@ -195,12 +171,7 @@ export default function Home() {
         <br />
         <label>
           Residence:
-          <input
-            type="text"
-            name="residence"
-            value={formData.residence}
-            onChange={handleChange}
-          />
+          <input type="text" name="residence" value={formData.residence} onChange={handleChange} />
         </label>
         <br />
         <label>
@@ -215,22 +186,12 @@ export default function Home() {
         <br />
         <label>
           Mobile Number (Mother):
-          <input
-            type="tel"
-            name="mobileMother"
-            value={formData.mobileMother}
-            onChange={handleChange}
-          />
+          <input type="tel" name="mobileMother" value={formData.mobileMother} onChange={handleChange} />
         </label>
         <br />
         <label>
           Mobile Number (Mama):
-          <input
-            type="tel"
-            name="mobileMama"
-            value={formData.mobileMama}
-            onChange={handleChange}
-          />
+          <input type="tel" name="mobileMama" value={formData.mobileMama} onChange={handleChange} />
         </label>
         <br />
         <label>
