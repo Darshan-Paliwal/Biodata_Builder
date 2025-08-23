@@ -32,8 +32,8 @@ app/ ├── api/ │   └── generate-pdf/route.ts   # PDF generation bac
 
 ### 1. Clone the repo
 ```bash
-git clone https://github.com/your-username/biodata-generator.git
-cd biodata-generator
+git clone https://github.com/Darshan-Paliwal/Biodata_Builder
+cd Biodata_Builder
 
 2. Install dependencies
 
