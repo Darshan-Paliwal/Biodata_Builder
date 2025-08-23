@@ -25,7 +25,7 @@ export default function Home() {
     mobileMother: '',
     mobileMama: '',
     image: null as File | null,
-    imageBase64: '' as string | null, // Added to state
+    imageBase64: '' as string | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,7 +58,7 @@ export default function Home() {
     const formDataToSend = {
       formData: {
         ...formData,
-        image: formData.imageBase64 || null, // Use imageBase64 or null if not set
+        image: formData.imageBase64 || null,
       },
     };
 
@@ -176,12 +176,7 @@ export default function Home() {
         <br />
         <label>
           Permanent Address:
-          <input
-            type="text"
-            name="permanentAddress"
-            value={formData.permanentAddress}
-            onChange={handleChange}
-          />
+          <input type="text" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
         </label>
         <br />
         <label>
