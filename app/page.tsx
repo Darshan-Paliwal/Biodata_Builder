@@ -318,16 +318,15 @@ export default function Home() {
       </form>
 
       {/* Footer */}
-<footer className="mt-8 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-center py-4 text-sm text-white shadow-md">
-  Created by <span className="font-medium">Darshan Paliwal</span> |{" "}
+<footer className="mt-10 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-center py-4 text-sm text-white">
+  Created by <span className="font-semibold">Darshan Paliwal</span> |{" "}
   <a
     href="https://darshanpaliwal.netlify.app"
     target="_blank"
     rel="noopener noreferrer"
     className="hover:underline inline-flex items-center gap-1"
   >
-    Portfolio
-    <span>↗</span>
+    Portfolio <span>↗</span>
   </a>
 </footer>
     </div>
