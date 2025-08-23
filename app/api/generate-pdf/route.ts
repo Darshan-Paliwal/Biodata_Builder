@@ -1,64 +1,125 @@
-import { NextResponse } from "next/server";
+// app/api/generate-pdf/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import getStream from "get-stream";
 
-export async function POST(req: Request) {
+// Force server runtime so Netlify doesn’t try to bundle client-side
+export const runtime = "nodejs";
+
+export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
+    const {
+      fullName,
+      dob,
+      pob,
+      timeOfBirth,
+      height,
+      weight,
+      complexion,
+      religion,
+      caste,
+      gotra,
+      education,
+      occupation,
+      income,
+      fatherName,
+      fatherOccupation,
+      motherName,
+      motherOccupation,
+      address,
+      mobileNumber,
+      relationWithPerson,
+      hobbies,
+      expectations,
+      imageUrl,
+    } = body;
+
+    // Create PDF
     const doc = new PDFDocument({ size: "A4", margin: 50 });
-    const stream = doc.pipe(new (require("stream").PassThrough)());
+    const stream = doc.pipe(getStream.buffer());
 
     // Title
-    doc.fontSize(18).text("Biodata", { align: "center" });
-    doc.moveDown(2);
+    doc.fontSize(20).text("Biodata", { align: "center" });
+    doc.moveDown(1.5);
 
-    // Helper for aligned fields
-    const drawField = (label: string, value: string | undefined) => {
+    // === Layout constants ===
+    const labelX = 70;
+    const colonX = 200;
+    const valueX = 220;
+    let y = 120;
+    const lineGap = 25;
+
+    // Helper to align fields horizontally (label : value)
+    const drawRow = (label: string, value?: string) => {
       if (!value) return;
-      const labelWidth = 150; // fixed width for labels
-      doc.fontSize(12).text(label, { continued: true, width: labelWidth });
-      doc.text(": " + value);
+      doc.fontSize(12).text(label, labelX, y);
+      doc.text(":", colonX, y);
+      doc.text(value, valueX, y);
+      y += lineGap;
     };
 
-    // Fields
-    drawField("Full Name", body.fullName);
-    drawField("Date of Birth", body.dob);
-    drawField("Gender", body.gender);
-    drawField("Address", body.address);
-    drawField("Education", body.education);
-    drawField("Occupation", body.occupation);
-    drawField("Mobile Number", body.mobileNumber);
-    if (body.mobileRelation) {
-      drawField("Relation (Mobile)", body.mobileRelation);
-    }
+    // Left section fields
+    drawRow("Full Name", fullName);
+    drawRow("Date of Birth", dob);
+    drawRow("Place of Birth", pob);
+    drawRow("Time of Birth", timeOfBirth);
+    drawRow("Height", height);
+    drawRow("Weight", weight);
+    drawRow("Complexion", complexion);
+    drawRow("Religion", religion);
+    drawRow("Caste", caste);
+    drawRow("Gotra", gotra);
+    drawRow("Education", education);
+    drawRow("Occupation", occupation);
+    drawRow("Income", income);
 
-    doc.moveDown(1);
+    drawRow("Father's Name", fatherName);
+    drawRow("Father's Occupation", fatherOccupation);
+    drawRow("Mother's Name", motherName);
+    drawRow("Mother's Occupation", motherOccupation);
 
-    // Add photo (if provided)
-    if (body.image) {
+    drawRow("Address", address);
+    drawRow("Mobile Number", mobileNumber);
+    drawRow("Relation with Mobile Number Person", relationWithPerson);
+
+    drawRow("Hobbies", hobbies);
+    drawRow("Expectations", expectations);
+
+    // === Image on right side ===
+    if (imageUrl) {
       try {
-        const imageBuffer = Buffer.from(body.image, "base64");
-        const x = doc.page.width - 200;
-        const y = 100;
-        doc.image(imageBuffer, x, y, { fit: [120, 120], align: "right" });
+        const res = await fetch(imageUrl);
+        const buffer = Buffer.from(await res.arrayBuffer());
+
+        // Place image at top-right
+        const imgX = 380;
+        const imgY = 120;
+        const imgW = 150;
+        const imgH = 180;
+
+        doc.image(buffer, imgX, imgY, { width: imgW, height: imgH });
       } catch (e) {
-        console.error("Image error:", e);
+        console.error("Image load failed:", e);
       }
     }
 
     doc.end();
-
-    const pdfBuffer = await getStream.buffer(stream);
+    const pdfBuffer = await stream;
 
     return new NextResponse(pdfBuffer, {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
-  } catch (error: any) {
-    console.error("PDF generation error:", error);
-    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    return NextResponse.json(
+      { error: "Failed to generate PDF" },
+      { status: 500 }
+    );
   }
 }
