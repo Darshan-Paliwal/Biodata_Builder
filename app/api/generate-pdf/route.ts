@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
+import fontkit from "fontkit"; // ✅ Correct import
 
 export async function POST(req: Request) {
   try {
@@ -60,18 +60,14 @@ export async function POST(req: Request) {
     const drawMobileField = (labelPrefix: string, person: string, number: string) => {
       if (!person && !number) return;
 
-      // Label → "Mobile Number (Mother)" OR "Mobile Number" if person is empty
       const label = person && person.trim() !== "" ? `${labelPrefix} (${person})` : `${labelPrefix}`;
 
-      // Draw bullet + label
       page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
       page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
 
-      // Colon
       const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
       page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
 
-      // Value → just the number
       const valueX = colonX + 20;
       const value = number || "";
 
