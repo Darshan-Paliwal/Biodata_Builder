@@ -48,31 +48,11 @@ npm run dev
 npm run build
 
 
----
-
-🌐 Live Demo
-
-👉 Deployed on Netlify
-
 
 ---
 
 👨‍💻 Author
 
-Created by Darshan Paliwal ↗
+Created by Darshan Paliwal 
 
-
----
-
----
-
-This way it’s:  
-- Minimal, no unnecessary fluff ✅  
-- Clean sections (Features, Tech, Setup) ✅  
-- Shows off your deployment ✅  
-- Branding with your name + portfolio ✅  
-
----
-
-Do you also want me to **make a matching preview banner image** (like a header image for the repo with your project name + gradient style) so the GitHub repo looks extra polished?
 
