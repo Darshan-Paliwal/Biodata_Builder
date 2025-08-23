@@ -30,6 +30,8 @@ export default function Home() {
     imageBase64: "" as string | null,
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -59,6 +61,8 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+
     const formDataToSend = {
       formData: {
         ...formData,
@@ -71,6 +75,8 @@ export default function Home() {
       body: JSON.stringify(formDataToSend),
       headers: { "Content-Type": "application/json" },
     });
+
+    setLoading(false);
 
     if (response.ok) {
       const blob = await response.blob();
@@ -91,151 +97,77 @@ export default function Home() {
         {/* Rest fields same as before */}
         <label>
           Name:
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-          />
+          <input type="text" name="name" value={formData.name} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Name:
-          <input
-            type="text"
-            name="birthName"
-            value={formData.birthName}
-            onChange={handleChange}
-          />
+          <input type="text" name="birthName" value={formData.birthName} onChange={handleChange} />
         </label>
         <br />
         <label>
           DOB:
-          <input
-            type="date"
-            name="dob"
-            value={formData.dob}
-            onChange={handleChange}
-          />
+          <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Time:
-          <input
-            type="time"
-            name="birthTime"
-            value={formData.birthTime}
-            onChange={handleChange}
-          />
+          <input type="time" name="birthTime" value={formData.birthTime} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Place:
-          <input
-            type="text"
-            name="birthPlace"
-            value={formData.birthPlace}
-            onChange={handleChange}
-          />
+          <input type="text" name="birthPlace" value={formData.birthPlace} onChange={handleChange} />
         </label>
         <br />
         <label>
           District:
-          <input
-            type="text"
-            name="district"
-            value={formData.district}
-            onChange={handleChange}
-          />
+          <input type="text" name="district" value={formData.district} onChange={handleChange} />
         </label>
         <br />
         <label>
           Gotra:
-          <input
-            type="text"
-            name="gotra"
-            value={formData.gotra}
-            onChange={handleChange}
-          />
+          <input type="text" name="gotra" value={formData.gotra} onChange={handleChange} />
         </label>
         <br />
         <label>
           Height:
-          <input
-            type="text"
-            name="height"
-            value={formData.height}
-            onChange={handleChange}
-          />
+          <input type="text" name="height" value={formData.height} onChange={handleChange} />
         </label>
         <br />
         <label>
           Blood Group:
-          <input
-            type="text"
-            name="bloodGroup"
-            value={formData.bloodGroup}
-            onChange={handleChange}
-          />
+          <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} />
         </label>
         <br />
         <label>
           Qualification:
-          <input
-            type="text"
-            name="qualification"
-            value={formData.qualification}
-            onChange={handleChange}
-          />
+          <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} />
         </label>
         <br />
         <label>
           Occupation:
-          <input
-            type="text"
-            name="occupation"
-            value={formData.occupation}
-            onChange={handleChange}
-          />
+          <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} />
         </label>
         <br />
         <label>
           Father Name:
-          <input
-            type="text"
-            name="fatherName"
-            value={formData.fatherName}
-            onChange={handleChange}
-          />
+          <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} />
         </label>
         <br />
         <label>
           Mother Name:
-          <input
-            type="text"
-            name="motherName"
-            value={formData.motherName}
-            onChange={handleChange}
-          />
+          <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} />
         </label>
         <br />
         <label>
           Mother Occupation:
-          <input
-            type="text"
-            name="motherOccupation"
-            value={formData.motherOccupation}
-            onChange={handleChange}
-          />
+          <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} />
         </label>
         <br />
         <label>
           Sibling:
-          <select
-            name="siblingType"
-            value={formData.siblingType}
-            onChange={handleSiblingChange}
-          >
+          <select name="siblingType" value={formData.siblingType} onChange={handleSiblingChange}>
             <option value="Brother">Brother</option>
             <option value="Sister">Sister</option>
           </select>
@@ -250,22 +182,12 @@ export default function Home() {
         <br />
         <label>
           Residence:
-          <input
-            type="text"
-            name="residence"
-            value={formData.residence}
-            onChange={handleChange}
-          />
+          <input type="text" name="residence" value={formData.residence} onChange={handleChange} />
         </label>
         <br />
         <label>
           Permanent Address:
-          <input
-            type="text"
-            name="permanentAddress"
-            value={formData.permanentAddress}
-            onChange={handleChange}
-          />
+          <input type="text" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
         </label>
         <br />
 
@@ -321,8 +243,32 @@ export default function Home() {
           <input type="file" accept="image/*" onChange={handleImageChange} />
         </label>
         <br />
-        <button type="submit">Generate PDF</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Generating..." : "Generate PDF"}
+        </button>
       </form>
+
+      {/* ✅ Footer */}
+      <footer
+        style={{
+          marginTop: "40px",
+          padding: "15px",
+          textAlign: "center",
+          background: "linear-gradient(to right, #4facfe, #00f2fe)",
+          color: "white",
+          borderRadius: "8px",
+        }}
+      >
+        Created by Darshan Paliwal |{" "}
+        <a
+          href="https://darshanpaliwal.netlify.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "yellow", textDecoration: "underline" }}
+        >
+          Portfolio
+        </a>
+      </footer>
     </div>
   );
 }
