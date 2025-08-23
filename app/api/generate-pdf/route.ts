@@ -44,10 +44,10 @@ export async function POST(req: Request) {
     let yPos = height - 250;
     const lineHeight = 62;
     const textAreaWidth = 1400;
-    const valueMaxWidth = textAreaWidth - 170; // Adjusted for consistent colon alignment
+    const valueMaxWidth = textAreaWidth - 170;
 
     const drawField = (label: string, value: string) => {
-      if (!value || value === "-") return; // Skip empty fields
+      if (!value || value === "-") return;
       page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
       page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
       const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     const drawSiblingField = () => {
       const siblingType = formData.siblingType || "Sister";
       const siblingName = formData.siblingName || "";
-      if (!siblingName) return; // Skip if no name provided
+      if (!siblingName) return;
       const label = `${siblingType} Name`;
       page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
       page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
@@ -77,7 +77,6 @@ export async function POST(req: Request) {
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
-    // Only draw fields that have values
     if (formData.name) drawField("Name", formData.name);
     if (formData.birthName) drawField("Birth Name", formData.birthName);
     if (formData.dob) drawField("DOB", formData.dob);
@@ -92,18 +91,18 @@ export async function POST(req: Request) {
     if (formData.fatherName) drawField("Father Name", formData.fatherName);
     if (formData.motherName) drawField("Mother Name", formData.motherName);
     if (formData.motherOccupation) drawField("Mother Occupation", formData.motherOccupation);
-    drawSiblingField(); // Handle sibling separately due to dynamic label
+    drawSiblingField();
     if (formData.residence) drawField("Residence", formData.residence);
     if (formData.permanentAddress) drawField("Permanent Address", formData.permanentAddress);
     if (formData.mobileMother) drawField("Mobile Number (Mother)", formData.mobileMother);
     if (formData.mobileMama) drawField("Mobile Number (Mama)", formData.mobileMama);
 
-    if (formData.imageBase64) {
-      const imageBytes = Uint8Array.from(atob(formData.imageBase64.split(",")[1]), (c) => c.charCodeAt(0));
+    if (formData.image) {
+      const imageBytes = Uint8Array.from(atob(formData.image.split(",")[1]), (c) => c.charCodeAt(0));
       let embeddedImage;
-      if (formData.imageBase64.startsWith("data:image/jpeg")) {
+      if (formData.image.startsWith("data:image/jpeg")) {
         embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else if (formData.imageBase64.startsWith("data:image/png")) {
+      } else if (formData.image.startsWith("data:image/png")) {
         embeddedImage = await pdfDoc.embedPng(imageBytes);
       } else {
         throw new Error("Unsupported image format");
