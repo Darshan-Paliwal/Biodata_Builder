@@ -4,27 +4,52 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-/** Split text into lines that fit maxWidth using the provided font+size */
-const wrapText = (
+/** Split text into lines dynamically depending on image overlap */
+const wrapTextDynamic = (
   text: string,
-  maxWidth: number,
+  yStart: number,
+  hasImage: boolean,
+  imageX: number,
+  imageTop: number,
+  imageBottom: number,
+  gutter: number,
+  valueX: number,
+  width: number,
+  rightMargin: number,
   font: any,
   size: number
 ): string[] => {
   const words = (text || "").split(" ");
   const lines: string[] = [];
   let currentLine = "";
+  let currentY = yStart;
+
+  const flushLine = () => {
+    if (!currentLine) return;
+    lines.push(currentLine);
+    currentLine = "";
+  };
 
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
+
+    // Check if this line is in the vertical band of the image
+    const withinImageBand =
+      hasImage && currentY <= imageTop && currentY >= imageBottom;
+    const maxWidth = withinImageBand
+      ? Math.max(200, imageX - gutter - valueX)
+      : width - rightMargin - valueX;
+
     if (font.widthOfTextAtSize(testLine, size) <= maxWidth) {
       currentLine = testLine;
     } else {
-      if (currentLine) lines.push(currentLine);
+      flushLine();
       currentLine = word;
+      currentY -= 40;
     }
   }
-  if (currentLine) lines.push(currentLine);
+  flushLine();
+
   return lines;
 };
 
@@ -69,7 +94,8 @@ export async function POST(req: Request) {
     if (formData.image) {
       const base64: string = String(formData.image);
       const commaIdx = base64.indexOf(",");
-      const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
+      const base64Data =
+        commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
       const imageBytes = Buffer.from(base64Data, "base64");
 
       if (base64.startsWith("data:image/jpeg")) {
@@ -79,8 +105,7 @@ export async function POST(req: Request) {
       }
 
       if (embeddedImage) {
-        // 🔥 Increase image size to give text margin
-        const dims = embeddedImage.scale(0.8); // was 0.65
+        const dims = embeddedImage.scale(0.65);
         imgWidth = dims.width;
         imgHeight = dims.height;
         imageTop = imageY + imgHeight;
@@ -110,17 +135,22 @@ export async function POST(req: Request) {
     const rightMargin = 100;
     const gutter = 40;
 
-    const getValueMaxWidth = () => {
-      const withinImageBand = hasImage && yPos <= imageTop && yPos >= imageBottom;
-      if (withinImageBand) {
-        const narrow = imageX - gutter - valueX;
-        return Math.max(200, narrow);
-      }
-      return width - rightMargin - valueX;
-    };
-
     const drawValueLines = (value: string) => {
-      const lines = wrapText(String(value ?? ""), getValueMaxWidth(), font, 32);
+      const lines = wrapTextDynamic(
+        String(value ?? ""),
+        yPos,
+        hasImage,
+        imageX,
+        imageTop,
+        imageBottom,
+        gutter,
+        valueX,
+        width,
+        rightMargin,
+        font,
+        32
+      );
+
       for (let i = 0; i < lines.length; i++) {
         page.drawText(lines[i], {
           x: valueX,
@@ -130,6 +160,7 @@ export async function POST(req: Request) {
           color: rgb(0, 0, 0),
         });
       }
+
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
@@ -199,11 +230,8 @@ export async function POST(req: Request) {
     drawMobile(formData.mobileRelation1, formData.mobileNumber1);
     drawMobile(formData.mobileRelation2, formData.mobileNumber2);
 
-    const extra: Array<{ label?: string; value?: string }> = Array.isArray(
-      formData.extraFields
-    )
-      ? formData.extraFields
-      : [];
+    const extra: Array<{ label?: string; value?: string }> =
+      Array.isArray(formData.extraFields) ? formData.extraFields : [];
     for (const item of extra) {
       const lbl = (item?.label ?? "").trim();
       const val = (item?.value ?? "").trim();
