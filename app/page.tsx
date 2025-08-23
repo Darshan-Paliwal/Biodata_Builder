@@ -317,7 +317,21 @@ export default function Home() {
         </button>
       </form>
 
-      {/* ⛔️ Footer with “Created by … | Portfolio” was intentionally removed as requested */}
+      {/* Footer */}
+<footer className="mt-16 p-6 text-center text-white bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 rounded-t-2xl">
+  <p className="text-lg">
+    Created by <span className="font-semibold">Darshan Paliwal</span> |{" "}
+    <a
+      href="https://darshanpaliwal.netlify.app"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="underline inline-flex items-center gap-1 hover:text-yellow-200"
+    >
+      Portfolio
+      <span aria-hidden="true">↗</span>
+    </a>
+  </p>
+</footer>
     </div>
   );
 }
