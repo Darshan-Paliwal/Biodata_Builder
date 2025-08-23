@@ -35,13 +35,13 @@ export async function POST(req: Request) {
     const titleX = (width - titleWidth) / 2;
     page.drawText(title, {
       x: titleX,
-      y: height - 150,
+      y: height - 200, // Moved title down slightly
       size: 52,
       font: fontBold,
       color: rgb(0, 0, 0),
     });
 
-    let yPos = height - 250;
+    let yPos = height - 300; // Adjusted starting yPos to move text down
     const lineHeight = 62;
     const textAreaWidth = 1400;
     const valueMaxWidth = textAreaWidth - 170;
@@ -77,6 +77,36 @@ export async function POST(req: Request) {
       yPos -= lineHeight + (lines.length - 1) * 40;
     };
 
+    const drawMobileField = (labelPrefix: string, person: string, number: string) => {
+      if (!person && !number) return;
+      const label = `${labelPrefix} (Person)`;
+      if (person) {
+        page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
+        page.drawText(label, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+        const colonX = 150 + fontBold.widthOfTextAtSize(label, 32);
+        page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+        const valueX = colonX + 20;
+        const lines = wrapText(person, valueMaxWidth, font, 32);
+        for (let i = 0; i < lines.length; i++) {
+          page.drawText(lines[i], { x: valueX, y: yPos - (i * 40), size: 32, font, color: rgb(0, 0, 0) });
+        }
+        yPos -= lineHeight + (lines.length - 1) * 40;
+      }
+      if (number) {
+        const numberLabel = `${labelPrefix} (Number)`;
+        page.drawText("•", { x: 100, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
+        page.drawText(numberLabel, { x: 150, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+        const colonX = 150 + fontBold.widthOfTextAtSize(numberLabel, 32);
+        page.drawText(" :", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+        const valueX = colonX + 20;
+        const lines = wrapText(number, valueMaxWidth, font, 32);
+        for (let i = 0; i < lines.length; i++) {
+          page.drawText(lines[i], { x: valueX, y: yPos - (i * 40), size: 32, font, color: rgb(0, 0, 0) });
+        }
+        yPos -= lineHeight + (lines.length - 1) * 40;
+      }
+    };
+
     if (formData.name) drawField("Name", formData.name);
     if (formData.birthName) drawField("Birth Name", formData.birthName);
     if (formData.dob) drawField("DOB", formData.dob);
@@ -94,8 +124,8 @@ export async function POST(req: Request) {
     drawSiblingField();
     if (formData.residence) drawField("Residence", formData.residence);
     if (formData.permanentAddress) drawField("Permanent Address", formData.permanentAddress);
-    if (formData.mobileMother) drawField("Mobile Number (Mother)", formData.mobileMother);
-    if (formData.mobileMama) drawField("Mobile Number (Mama)", formData.mobileMama);
+    drawMobileField("Mobile Number (Mother)", formData.mobileMotherPerson || "", formData.mobileMother || "");
+    drawMobileField("Mobile Number (Mama)", formData.mobileMamaPerson || "", formData.mobileMama || "");
 
     if (formData.image) {
       const imageBytes = Uint8Array.from(atob(formData.image.split(",")[1]), (c) => c.charCodeAt(0));
