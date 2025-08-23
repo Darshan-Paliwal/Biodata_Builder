@@ -2,18 +2,18 @@
   "name": "biodata-generator",
   "version": "0.1.0",
   "private": true,
+  "dependencies": {
+    "next": "14.2.5",
+    "react": "^18",
+    "react-dom": "^18",
+    "pdf-lib": "^1.17.1" 
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  },
-  "dependencies": {
-    "next": "14.2.5",
-    "pdf-lib": "^1.17.1",
-    "react": "^18",
-    "react-dom": "^18"
-  },
+    "start": "next start"
+  }
+
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
