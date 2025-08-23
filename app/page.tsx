@@ -1,130 +1,310 @@
-"use client";
-
-import { useState } from "react";
+import { useState } from 'react';
 
 export default function Home() {
   const [formData, setFormData] = useState({
-    name: "",
-    birthName: "",
-    dob: "",
-    birthTime: "",
-    birthPlace: "",
-    district: "",
-    gotra: "",
-    height: "",
-    bloodGroup: "",
-    qualification: "",
-    occupation: "",
-    fatherName: "",
-    motherName: "",
-    motherOccupation: "",
-    sisterName: "",
-    sisterQualification: "",
-    residence: "",
-    permanentAddress: "",
-    mobileMother: "",
-    mobileMama: "",
+    name: '',
+    birthName: '',
+    dob: '',
+    birthTime: '',
+    birthPlace: '',
+    district: '',
+    gotra: '',
+    height: '',
+    bloodGroup: '',
+    qualification: '',
+    occupation: '',
+    fatherName: '',
+    motherName: '',
+    motherOccupation: '',
+    siblingType: 'Sister', // Default value for dropdown
+    siblingName: '', // Text field for sibling name
+    residence: '',
+    permanentAddress: '',
+    mobileMother: '',
+    mobileMama: '',
+    image: null as File | null, // For image upload
   });
-  const [image, setImage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSiblingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+    if (e.target.files && e.target.files[0]) {
+      setFormData((prev) => ({ ...prev, image: e.target.files![0] }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/generate-pdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formData, image }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+    const formDataToSend = new FormData();
+    for (const key in formData) {
+      if (key === 'image' && formData.image) {
+        formDataToSend.append(key, formData.image);
+      } else {
+        formDataToSend.append(key, formData[key] as string);
       }
+    }
 
+    const response = await fetch('/api/generate-pdf', {
+      method: 'POST',
+      body: JSON.stringify({ formData }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (response.ok) {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
+      const a = document.createElement('a');
       a.href = url;
-      a.download = "biodata.pdf";
-      document.body.appendChild(a);
+      a.download = 'biodata.pdf';
       a.click();
-      a.remove();
-    } catch (error) {
-      console.error("Fetch error:", error);
-      alert("Failed to generate PDF");
-    } finally {
-      setLoading(false);
+    } else {
+      console.error('Failed to generate PDF');
     }
   };
 
   return (
-    <main>
-      <h1>Biodata PDF Generator</h1>
+    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+      <h1>Bio Data Form</h1>
       <form onSubmit={handleSubmit}>
-        <label>Full Name:</label>
-        <input type="text" name="name" value={formData.name} onChange={handleChange} required />
-        <label>Birth Name:</label>
-        <input type="text" name="birthName" value={formData.birthName} onChange={handleChange} />
-        <label>DOB:</label>
-        <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
-        <label>Birth Time:</label>
-        <input type="text" name="birthTime" value={formData.birthTime} onChange={handleChange} />
-        <label>Birth Place:</label>
-        <input type="text" name="birthPlace" value={formData.birthPlace} onChange={handleChange} />
-        <label>District:</label>
-        <input type="text" name="district" value={formData.district} onChange={handleChange} />
-        <label>Gotra:</label>
-        <input type="text" name="gotra" value={formData.gotra} onChange={handleChange} />
-        <label>Height:</label>
-        <input type="text" name="height" value={formData.height} onChange={handleChange} />
-        <label>Blood Group:</label>
-        <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} />
-        <label>Qualification:</label>
-        <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} />
-        <label>Occupation:</label>
-        <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} />
-        <label>Father Name:</label>
-        <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} />
-        <label>Mother Name:</label>
-        <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} />
-        <label>Mother Occupation:</label>
-        <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} />
-        <label>Sister Name:</label>
-        <input type="text" name="sisterName" value={formData.sisterName} onChange={handleChange} />
-        <label>Sister Qualification:</label>
-        <input type="text" name="sisterQualification" value={formData.sisterQualification} onChange={handleChange} />
-        <label>Residence:</label>
-        <input type="text" name="residence" value={formData.residence} onChange={handleChange} />
-        <label>Permanent Address:</label>
-        <input type="text" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
-        <label>Mobile Number (Mother):</label>
-        <input type="tel" name="mobileMother" value={formData.mobileMother} onChange={handleChange} />
-        <label>Mobile Number (Mama):</label>
-        <input type="tel" name="mobileMama" value={formData.mobileMama} onChange={handleChange} />
-        <label>Photo:</label>
-        <input type="file" accept="image/*" onChange={handleImageChange} />
-        <button type="submit" disabled={loading}>
-          {loading ? "Generating..." : "Generate PDF"}
-        </button>
+        <label>
+          Name:
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Birth Name:
+          <input
+            type="text"
+            name="birthName"
+            value={formData.birthName}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          DOB:
+          <input
+            type="date"
+            name="dob"
+            value={formData.dob}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Birth Time:
+          <input
+            type="time"
+            name="birthTime"
+            value={formData.birthTime}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Birth Place:
+          <input
+            type="text"
+            name="birthPlace"
+            value={formData.birthPlace}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          District:
+          <input
+            type="text"
+            name="district"
+            value={formData.district}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Gotra:
+          <input
+            type="text"
+            name="gotra"
+            value={formData.gotra}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Height:
+          <input
+            type="text"
+            name="height"
+            value={formData.height}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Blood Group:
+          <input
+            type="text"
+            name="bloodGroup"
+            value={formData.bloodGroup}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Qualification:
+          <input
+            type="text"
+            name="qualification"
+            value={formData.qualification}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Occupation:
+          <input
+            type="text"
+            name="occupation"
+            value={formData.occupation}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Father Name:
+          <input
+            type="text"
+            name="fatherName"
+            value={formData.fatherName}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Mother Name:
+          <input
+            type="text"
+            name="motherName"
+            value={formData.motherName}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Mother Occupation:
+          <input
+            type="text"
+            name="motherOccupation"
+            value={formData.motherOccupation}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Sibling:
+          <select
+            name="siblingType"
+            value={formData.siblingType}
+            onChange={handleSiblingChange}
+            required
+          >
+            <option value="Brother">Brother</option>
+            <option value="Sister">Sister</option>
+          </select>
+          <input
+            type="text"
+            name="siblingName"
+            value={formData.siblingName}
+            onChange={handleSiblingChange}
+            placeholder="Enter name"
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Residence:
+          <input
+            type="text"
+            name="residence"
+            value={formData.residence}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Permanent Address:
+          <input
+            type="text"
+            name="permanentAddress"
+            value={formData.permanentAddress}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Mobile Number (Mother):
+          <input
+            type="tel"
+            name="mobileMother"
+            value={formData.mobileMother}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Mobile Number (Mama):
+          <input
+            type="tel"
+            name="mobileMama"
+            value={formData.mobileMama}
+            onChange={handleChange}
+            required
+          />
+        </label>
+        <br />
+        <label>
+          Upload Image:
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            required
+          />
+        </label>
+        <br />
+        <button type="submit">Generate PDF</button>
       </form>
-    </main>
+    </div>
   );
 }
