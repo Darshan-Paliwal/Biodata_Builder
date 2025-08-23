@@ -1,33 +1,33 @@
 "use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 export default function Home() {
   const [formData, setFormData] = useState({
-    name: '',
-    birthName: '',
-    dob: '',
-    birthTime: '',
-    birthPlace: '',
-    district: '',
-    gotra: '',
-    height: '',
-    bloodGroup: '',
-    qualification: '',
-    occupation: '',
-    fatherName: '',
-    motherName: '',
-    motherOccupation: '',
-    siblingType: 'Sister',
-    siblingName: '',
-    residence: '',
-    permanentAddress: '',
-    mobileMotherPerson: '',
-    mobileMother: '',
-    mobileMamaPerson: '',
-    mobileMama: '',
+    name: "",
+    birthName: "",
+    dob: "",
+    birthTime: "",
+    birthPlace: "",
+    district: "",
+    gotra: "",
+    height: "",
+    bloodGroup: "",
+    qualification: "",
+    occupation: "",
+    fatherName: "",
+    motherName: "",
+    motherOccupation: "",
+    siblingType: "Sister",
+    siblingName: "",
+    residence: "",
+    permanentAddress: "",
+    mobileRelation1: "",
+    mobileNumber1: "",
+    mobileRelation2: "",
+    mobileNumber2: "",
     image: null as File | null,
-    imageBase64: '' as string | null,
+    imageBase64: "" as string | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -35,7 +35,9 @@ export default function Home() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSiblingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleSiblingChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -64,101 +66,176 @@ export default function Home() {
       },
     };
 
-    const response = await fetch('/api/generate-pdf', {
-      method: 'POST',
+    const response = await fetch("/api/generate-pdf", {
+      method: "POST",
       body: JSON.stringify(formDataToSend),
-      headers: { 'Content-Type': 'application/json' },
+      headers: { "Content-Type": "application/json" },
     });
 
     if (response.ok) {
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = 'biodata.pdf';
+      a.download = "biodata.pdf";
       a.click();
     } else {
-      console.error('Failed to generate PDF:', await response.text());
+      console.error("Failed to generate PDF:", await response.text());
     }
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '600px', margin: '0 auto' }}>
+    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
       <h1>Bio Data Form</h1>
       <form onSubmit={handleSubmit}>
+        {/* Rest fields same as before */}
         <label>
           Name:
-          <input type="text" name="name" value={formData.name} onChange={handleChange} />
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Birth Name:
-          <input type="text" name="birthName" value={formData.birthName} onChange={handleChange} />
+          <input
+            type="text"
+            name="birthName"
+            value={formData.birthName}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           DOB:
-          <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
+          <input
+            type="date"
+            name="dob"
+            value={formData.dob}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Birth Time:
-          <input type="time" name="birthTime" value={formData.birthTime} onChange={handleChange} />
+          <input
+            type="time"
+            name="birthTime"
+            value={formData.birthTime}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Birth Place:
-          <input type="text" name="birthPlace" value={formData.birthPlace} onChange={handleChange} />
+          <input
+            type="text"
+            name="birthPlace"
+            value={formData.birthPlace}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           District:
-          <input type="text" name="district" value={formData.district} onChange={handleChange} />
+          <input
+            type="text"
+            name="district"
+            value={formData.district}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Gotra:
-          <input type="text" name="gotra" value={formData.gotra} onChange={handleChange} />
+          <input
+            type="text"
+            name="gotra"
+            value={formData.gotra}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Height:
-          <input type="text" name="height" value={formData.height} onChange={handleChange} />
+          <input
+            type="text"
+            name="height"
+            value={formData.height}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Blood Group:
-          <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} />
+          <input
+            type="text"
+            name="bloodGroup"
+            value={formData.bloodGroup}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Qualification:
-          <input type="text" name="qualification" value={formData.qualification} onChange={handleChange} />
+          <input
+            type="text"
+            name="qualification"
+            value={formData.qualification}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Occupation:
-          <input type="text" name="occupation" value={formData.occupation} onChange={handleChange} />
+          <input
+            type="text"
+            name="occupation"
+            value={formData.occupation}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Father Name:
-          <input type="text" name="fatherName" value={formData.fatherName} onChange={handleChange} />
+          <input
+            type="text"
+            name="fatherName"
+            value={formData.fatherName}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Mother Name:
-          <input type="text" name="motherName" value={formData.motherName} onChange={handleChange} />
+          <input
+            type="text"
+            name="motherName"
+            value={formData.motherName}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Mother Occupation:
-          <input type="text" name="motherOccupation" value={formData.motherOccupation} onChange={handleChange} />
+          <input
+            type="text"
+            name="motherOccupation"
+            value={formData.motherOccupation}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Sibling:
-          <select name="siblingType" value={formData.siblingType} onChange={handleSiblingChange}>
+          <select
+            name="siblingType"
+            value={formData.siblingType}
+            onChange={handleSiblingChange}
+          >
             <option value="Brother">Brother</option>
             <option value="Sister">Sister</option>
           </select>
@@ -173,58 +250,72 @@ export default function Home() {
         <br />
         <label>
           Residence:
-          <input type="text" name="residence" value={formData.residence} onChange={handleChange} />
+          <input
+            type="text"
+            name="residence"
+            value={formData.residence}
+            onChange={handleChange}
+          />
         </label>
         <br />
         <label>
           Permanent Address:
-          <input type="text" name="permanentAddress" value={formData.permanentAddress} onChange={handleChange} />
-        </label>
-        <br />
-        <label>
-          Mobile Number (Mother) - Person:
           <input
             type="text"
-            name="mobileMotherPerson"
-            value={formData.mobileMotherPerson}
+            name="permanentAddress"
+            value={formData.permanentAddress}
             onChange={handleChange}
-            placeholder="Person name"
           />
         </label>
         <br />
+
+        {/* ✅ Updated Mobile Fields */}
+        <h3>Mobile Numbers</h3>
         <label>
-          Mobile Number (Mother) - Number:
-          <input
-            type="tel"
-            name="mobileMother"
-            value={formData.mobileMother}
-            onChange={handleChange}
-            placeholder="Phone number"
-          />
-        </label>
-        <br />
-        <label>
-          Mobile Number (Mama) - Person:
+          Relation:
           <input
             type="text"
-            name="mobileMamaPerson"
-            value={formData.mobileMamaPerson}
+            name="mobileRelation1"
+            value={formData.mobileRelation1}
             onChange={handleChange}
-            placeholder="Person name"
+            placeholder="e.g. Mother"
           />
         </label>
         <br />
         <label>
-          Mobile Number (Mama) - Number:
+          Mobile Number:
           <input
             type="tel"
-            name="mobileMama"
-            value={formData.mobileMama}
+            name="mobileNumber1"
+            value={formData.mobileNumber1}
             onChange={handleChange}
-            placeholder="Phone number"
+            placeholder="Enter phone number"
           />
         </label>
         <br />
+        <label>
+          Relation:
+          <input
+            type="text"
+            name="mobileRelation2"
+            value={formData.mobileRelation2}
+            onChange={handleChange}
+            placeholder="e.g. Mama"
+          />
+        </label>
+        <br />
+        <label>
+          Mobile Number:
+          <input
+            type="tel"
+            name="mobileNumber2"
+            value={formData.mobileNumber2}
+            onChange={handleChange}
+            placeholder="Enter phone number"
+          />
+        </label>
+        <br />
+
         <label>
           Upload Image:
           <input type="file" accept="image/*" onChange={handleImageChange} />
