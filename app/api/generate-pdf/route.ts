@@ -52,6 +52,34 @@ export async function POST(req: Request) {
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
+    // ---------- Pre-embed image ----------
+    let embeddedImage: any = null;
+    let hasImage = false;
+    let imgWidth = 0;
+    let imgHeight = 0;
+    const imageX = width - 550; // right side placement
+    const imageY = height - 900;
+
+    if (formData.image) {
+      const base64: string = String(formData.image);
+      const commaIdx = base64.indexOf(",");
+      const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
+      const imageBytes = Buffer.from(base64Data, "base64");
+
+      if (base64.startsWith("data:image/jpeg")) {
+        embeddedImage = await pdfDoc.embedJpg(imageBytes);
+      } else if (base64.startsWith("data:image/png")) {
+        embeddedImage = await pdfDoc.embedPng(imageBytes);
+      }
+
+      if (embeddedImage) {
+        const dims = embeddedImage.scale(0.5);
+        imgWidth = dims.width;
+        imgHeight = dims.height;
+        hasImage = true;
+      }
+    }
+
     // ---------- Title ----------
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
@@ -72,7 +100,17 @@ export async function POST(req: Request) {
     const valueX = colonX + 30;
     const rightMargin = 100;
 
-    const getValueMaxWidth = () => width - rightMargin - valueX;
+    // function to calculate available text width (avoid image area)
+    const getValueMaxWidth = () => {
+      if (
+        hasImage &&
+        yPos <= imageY + imgHeight &&
+        yPos >= imageY - 50 // allow small buffer
+      ) {
+        return imageX - 50 - valueX; // wrap text before hitting image
+      }
+      return width - rightMargin - valueX;
+    };
 
     const drawValueLines = (value: string) => {
       const lines = wrapText(String(value ?? ""), getValueMaxWidth(), font, 32);
@@ -109,7 +147,6 @@ export async function POST(req: Request) {
       const rel = (relation ?? "").trim();
       const num = (number ?? "").trim();
       if (!rel && !num) return;
-
       const label = rel ? `Mobile Number (${rel})` : "Mobile Number";
       drawField(label, num);
     };
@@ -132,7 +169,6 @@ export async function POST(req: Request) {
     drawSibling();
     drawField("Residence", formData.residence);
     drawField("Permanent Address", formData.permanentAddress);
-
     drawMobile(formData.mobileRelation1, formData.mobileNumber1);
     drawMobile(formData.mobileRelation2, formData.mobileNumber2);
 
@@ -145,39 +181,19 @@ export async function POST(req: Request) {
       if (lbl && val) drawField(lbl, val);
     }
 
-    // ---------- Draw image BELOW all text ----------
-    if (formData.image) {
-      const base64: string = String(formData.image);
-      const commaIdx = base64.indexOf(",");
-      const base64Data = commaIdx >= 0 ? base64.slice(commaIdx + 1) : base64;
-      const imageBytes = Buffer.from(base64Data, "base64");
-
-      let embeddedImage: any = null;
-      if (base64.startsWith("data:image/jpeg")) {
-        embeddedImage = await pdfDoc.embedJpg(imageBytes);
-      } else if (base64.startsWith("data:image/png")) {
-        embeddedImage = await pdfDoc.embedPng(imageBytes);
-      }
-
-      if (embeddedImage) {
-        const imgWidth = 400;
-        const imgHeight = (embeddedImage.height / embeddedImage.width) * imgWidth;
-
-        // place image below the last text
-        page.drawImage(embeddedImage, {
-          x: width - imgWidth - 100,
-          y: yPos - imgHeight - 50, // below text
-          width: imgWidth,
-          height: imgHeight,
-        });
-      }
+    // ---------- Draw image ----------
+    if (hasImage && embeddedImage) {
+      page.drawImage(embeddedImage, {
+        x: imageX,
+        y: imageY,
+        width: imgWidth,
+        height: imgHeight,
+      });
     }
 
     // ---------- Return PDF ----------
     const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = Buffer.from(pdfBytes);
-
-    return new NextResponse(pdfBuffer, {
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
