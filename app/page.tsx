@@ -1,4 +1,4 @@
-"use client"; // Mark this as a Client Component
+"use client";
 
 import { useState } from 'react';
 
@@ -18,13 +18,13 @@ export default function Home() {
     fatherName: '',
     motherName: '',
     motherOccupation: '',
-    siblingType: 'Sister', // Default value for dropdown
-    siblingName: '', // Text field for sibling name
+    siblingType: 'Sister',
+    siblingName: '',
     residence: '',
     permanentAddress: '',
     mobileMother: '',
     mobileMama: '',
-    image: null as File | null, // For image upload
+    image: null as File | null,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,24 +39,27 @@ export default function Home() {
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData((prev) => ({ ...prev, image: e.target.files![0] }));
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, image: file, imageBase64: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formDataToSend = new FormData();
-    for (const key in formData) {
-      if (key === 'image' && formData.image) {
-        formDataToSend.append(key, formData.image);
-      } else {
-        formDataToSend.append(key, formData[key] as string);
-      }
-    }
+    const formDataToSend = {
+      formData: {
+        ...formData,
+        image: formData.image ? formData.imageBase64 : null, // Send base64 if image exists
+      },
+    };
 
     const response = await fetch('/api/generate-pdf', {
       method: 'POST',
-      body: JSON.stringify({ formData }),
+      body: JSON.stringify(formDataToSend),
       headers: { 'Content-Type': 'application/json' },
     });
 
@@ -78,101 +81,47 @@ export default function Home() {
       <form onSubmit={handleSubmit}>
         <label>
           Name:
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="name" value={formData.name} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Name:
-          <input
-            type="text"
-            name="birthName"
-            value={formData.birthName}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="birthName" value={formData.birthName} onChange={handleChange} />
         </label>
         <br />
         <label>
           DOB:
-          <input
-            type="date"
-            name="dob"
-            value={formData.dob}
-            onChange={handleChange}
-            required
-          />
+          <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Time:
-          <input
-            type="time"
-            name="birthTime"
-            value={formData.birthTime}
-            onChange={handleChange}
-            required
-          />
+          <input type="time" name="birthTime" value={formData.birthTime} onChange={handleChange} />
         </label>
         <br />
         <label>
           Birth Place:
-          <input
-            type="text"
-            name="birthPlace"
-            value={formData.birthPlace}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="birthPlace" value={formData.birthPlace} onChange={handleChange} />
         </label>
         <br />
         <label>
           District:
-          <input
-            type="text"
-            name="district"
-            value={formData.district}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="district" value={formData.district} onChange={handleChange} />
         </label>
         <br />
         <label>
           Gotra:
-          <input
-            type="text"
-            name="gotra"
-            value={formData.gotra}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="gotra" value={formData.gotra} onChange={handleChange} />
         </label>
         <br />
         <label>
           Height:
-          <input
-            type="text"
-            name="height"
-            value={formData.height}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="height" value={formData.height} onChange={handleChange} />
         </label>
         <br />
         <label>
           Blood Group:
-          <input
-            type="text"
-            name="bloodGroup"
-            value={formData.bloodGroup}
-            onChange={handleChange}
-            required
-          />
+          <input type="text" name="bloodGroup" value={formData.bloodGroup} onChange={handleChange} />
         </label>
         <br />
         <label>
@@ -182,7 +131,6 @@ export default function Home() {
             name="qualification"
             value={formData.qualification}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -193,7 +141,6 @@ export default function Home() {
             name="occupation"
             value={formData.occupation}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -204,7 +151,6 @@ export default function Home() {
             name="fatherName"
             value={formData.fatherName}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -215,7 +161,6 @@ export default function Home() {
             name="motherName"
             value={formData.motherName}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -226,7 +171,6 @@ export default function Home() {
             name="motherOccupation"
             value={formData.motherOccupation}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -236,7 +180,6 @@ export default function Home() {
             name="siblingType"
             value={formData.siblingType}
             onChange={handleSiblingChange}
-            required
           >
             <option value="Brother">Brother</option>
             <option value="Sister">Sister</option>
@@ -247,7 +190,6 @@ export default function Home() {
             value={formData.siblingName}
             onChange={handleSiblingChange}
             placeholder="Enter name"
-            required
           />
         </label>
         <br />
@@ -258,7 +200,6 @@ export default function Home() {
             name="residence"
             value={formData.residence}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -269,7 +210,6 @@ export default function Home() {
             name="permanentAddress"
             value={formData.permanentAddress}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -280,7 +220,6 @@ export default function Home() {
             name="mobileMother"
             value={formData.mobileMother}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
@@ -291,18 +230,12 @@ export default function Home() {
             name="mobileMama"
             value={formData.mobileMama}
             onChange={handleChange}
-            required
           />
         </label>
         <br />
         <label>
           Upload Image:
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            required
-          />
+          <input type="file" accept="image/*" onChange={handleImageChange} />
         </label>
         <br />
         <button type="submit">Generate PDF</button>
