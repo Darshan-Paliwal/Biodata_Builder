@@ -318,13 +318,30 @@ export default function Home() {
       </form>
 
       {/* Footer */}
-<footer className="mt-10 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-center py-4 text-sm text-white">
-  Created by <span className="font-semibold">Darshan Paliwal</span> |{" "}
+<footer
+  style={{
+    marginTop: "2rem",
+    width: "100%",
+    background: "linear-gradient(to right, #6366f1, #8b5cf6, #ec4899)", // Indigo → Purple → Pink
+    color: "white",
+    textAlign: "center",
+    padding: "1rem 0",
+    fontSize: "0.9rem",
+  }}
+>
+  Created by <span style={{ fontWeight: 600 }}>Darshan Paliwal</span> |{" "}
   <a
     href="https://darshanpaliwal.netlify.app"
     target="_blank"
     rel="noopener noreferrer"
-    className="hover:underline inline-flex items-center gap-1"
+    style={{
+      color: "white",
+      textDecoration: "underline",
+      marginLeft: "4px",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "4px",
+    }}
   >
     Portfolio <span>↗</span>
   </a>
