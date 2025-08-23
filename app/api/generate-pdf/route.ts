@@ -4,7 +4,6 @@ export const runtime = "nodejs";
 import { NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-/** Split text into lines dynamically depending on image overlap */
 const wrapTextDynamic = (
   text: string,
   yStart: number,
@@ -33,7 +32,6 @@ const wrapTextDynamic = (
   for (const word of words) {
     const testLine = currentLine ? `${currentLine} ${word}` : word;
 
-    // Check if this line is in the vertical band of the image
     const withinImageBand =
       hasImage && currentY <= imageTop && currentY >= imageBottom;
     const maxWidth = withinImageBand
@@ -53,7 +51,6 @@ const wrapTextDynamic = (
   return lines;
 };
 
-/** Convert "HH:mm" -> "hh:mm AM/PM" */
 const formatTime = (timeStr?: string) => {
   if (!timeStr) return "";
   const [hStr, mStr] = timeStr.split(":");
@@ -73,18 +70,17 @@ export async function POST(req: Request) {
     const formData = body?.formData ?? {};
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // large canvas
+    const page = pdfDoc.addPage([2400, 1800]);
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // ---------- Pre-embed image ----------
     let embeddedImage: any = null;
     let hasImage = false;
 
     const imageX = 1550;
-    const imageY = 500;
+    const imageY = 502; // ✅ shifted UP by 2px
 
     let imgWidth = 0;
     let imgHeight = 0;
@@ -114,7 +110,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // ---------- Title ----------
     const title = `BIO DATA : ${formData.name?.toUpperCase() || "UNKNOWN"}`;
     const titleWidth = fontBold.widthOfTextAtSize(title, 52);
     page.drawText(title, {
@@ -125,7 +120,6 @@ export async function POST(req: Request) {
       color: rgb(0, 0, 0),
     });
 
-    // ---------- Text layout ----------
     let yPos = height - 350;
     const lineHeight = 62;
     const bulletX = 100;
@@ -203,12 +197,10 @@ export async function POST(req: Request) {
       const rel = (relation ?? "").trim();
       const num = (number ?? "").trim();
       if (!rel && !num) return;
-
       const label = rel ? `Mobile Number (${rel})` : "Mobile Number";
       drawField(label, num);
     };
 
-    // ---------- Draw all fields ----------
     drawField("Name", formData.name);
     drawField("Birth Name", formData.birthName);
     drawField("DOB", formData.dob);
@@ -226,7 +218,6 @@ export async function POST(req: Request) {
     drawSibling();
     drawField("Residence", formData.residence);
     drawField("Permanent Address", formData.permanentAddress);
-
     drawMobile(formData.mobileRelation1, formData.mobileNumber1);
     drawMobile(formData.mobileRelation2, formData.mobileNumber2);
 
@@ -238,7 +229,6 @@ export async function POST(req: Request) {
       if (lbl && val) drawField(lbl, val);
     }
 
-    // ---------- Draw image ----------
     if (hasImage && embeddedImage) {
       page.drawImage(embeddedImage, {
         x: imageX,
@@ -248,9 +238,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // ---------- Return PDF ----------
     const pdfBytes = await pdfDoc.save();
-    const pdfBuffer = Buffer.from(pdfBytes); // ✅ FIX for Netlify
+    const pdfBuffer = Buffer.from(pdfBytes);
 
     return new NextResponse(pdfBuffer, {
       status: 200,
