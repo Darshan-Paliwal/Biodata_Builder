@@ -22,7 +22,9 @@ export default function Home() {
     siblingName: '',
     residence: '',
     permanentAddress: '',
+    mobileMotherPerson: '',
     mobileMother: '',
+    mobileMamaPerson: '',
     mobileMama: '',
     image: null as File | null,
     imageBase64: '' as string | null,
@@ -180,13 +182,47 @@ export default function Home() {
         </label>
         <br />
         <label>
-          Mobile Number (Mother):
-          <input type="tel" name="mobileMother" value={formData.mobileMother} onChange={handleChange} />
+          Mobile Number (Mother) - Person:
+          <input
+            type="text"
+            name="mobileMotherPerson"
+            value={formData.mobileMotherPerson}
+            onChange={handleChange}
+            placeholder="Person name"
+          />
         </label>
         <br />
         <label>
-          Mobile Number (Mama):
-          <input type="tel" name="mobileMama" value={formData.mobileMama} onChange={handleChange} />
+          Mobile Number (Mother) - Number:
+          <input
+            type="tel"
+            name="mobileMother"
+            value={formData.mobileMother}
+            onChange={handleChange}
+            placeholder="Phone number"
+          />
+        </label>
+        <br />
+        <label>
+          Mobile Number (Mama) - Person:
+          <input
+            type="text"
+            name="mobileMamaPerson"
+            value={formData.mobileMamaPerson}
+            onChange={handleChange}
+            placeholder="Person name"
+          />
+        </label>
+        <br />
+        <label>
+          Mobile Number (Mama) - Number:
+          <input
+            type="tel"
+            name="mobileMama"
+            value={formData.mobileMama}
+            onChange={handleChange}
+            placeholder="Phone number"
+          />
         </label>
         <br />
         <label>
