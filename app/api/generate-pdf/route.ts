@@ -33,46 +33,26 @@ export async function POST(req: Request) {
     let y = pageHeight - 150;
     const lineHeight = 60;
 
-    // Helper function to align labels + values
-    function drawText(label: string, value: string, isHeader = false) {
+    // ✅ Helper function (arrow function instead of function decl)
+    const drawText = (label: string, value: string, isHeader = false) => {
       const fontSize = isHeader ? 48 : 36;
       const labelX = 200;
       const colonX = 750; // keep colons aligned
       const valueX = 800;
 
-      page.drawText(label, {
-        x: labelX,
-        y,
-        size: fontSize,
-        font,
-        color: rgb(0, 0, 0),
-      });
-
-      page.drawText(":", {
-        x: colonX,
-        y,
-        size: fontSize,
-        font,
-        color: rgb(0, 0, 0),
-      });
-
-      page.drawText(value || "-", {
-        x: valueX,
-        y,
-        size: fontSize,
-        font,
-        color: rgb(0, 0, 0),
-      });
+      page.drawText(label, { x: labelX, y, size: fontSize, font, color: rgb(0, 0, 0) });
+      page.drawText(":", { x: colonX, y, size: fontSize, font, color: rgb(0, 0, 0) });
+      page.drawText(value || "-", { x: valueX, y, size: fontSize, font, color: rgb(0, 0, 0) });
 
       y -= lineHeight;
-    }
+    };
 
     // ✅ Add biodata fields
     drawText("Name", name, true);
     drawText("Date of Birth", dob);
     drawText("Email", email);
     drawText("Mobile Number", mobileNumber);
-    drawText("Relation", relation); // cleaned label
+    drawText("Relation", relation);
     drawText("Address", address);
     drawText("Education", education);
     drawText("Occupation", occupation);
@@ -105,7 +85,7 @@ export async function POST(req: Request) {
     // ✅ Save PDF
     const pdfBytes = await pdfDoc.save();
 
-    // 🔥 FIX: Wrap in Buffer so NextResponse accepts it
+    // ✅ Wrap in Buffer for NextResponse
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {
         "Content-Type": "application/pdf",
