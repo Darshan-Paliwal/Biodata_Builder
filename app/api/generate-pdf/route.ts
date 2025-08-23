@@ -1,99 +1,104 @@
-import { NextResponse } from "next/server";
+// app/api/generate/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
-
     const {
       name,
       dob,
       email,
-      mobileNumber,
+      mobile,
       relation,
       address,
       education,
       occupation,
-      fatherName,
-      motherName,
+      father,
+      mother,
       height,
       weight,
-      bloodGroup,
-      maritalStatus,
+      blood,
+      marital,
       hobbies,
-      photo,
-    } = body;
+      imageBase64
+    } = await req.json();
 
-    // ✅ Create PDF
+    // Create PDF with custom canvas size (2400x1800)
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]); // fixed layout
+    const page = pdfDoc.addPage([2400, 1800]);
+
+    // Fonts
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontSize = 36;
 
-    const { height: pageHeight } = page.getSize();
-    let y = pageHeight - 150;
-    const lineHeight = 60;
+    // Layout setup
+    const startX = 200;
+    const startY = 1600;
+    const lineGap = 70;
+    let y = startY;
 
-    // ✅ Helper function (arrow function instead of function decl)
-    const drawText = (label: string, value: string, isHeader = false) => {
-      const fontSize = isHeader ? 48 : 36;
-      const labelX = 200;
-      const colonX = 750; // keep colons aligned
-      const valueX = 800;
+    const colonX = 800;  // fixed column for colons
+    const valueX = 900;  // fixed column for values
 
-      page.drawText(label, { x: labelX, y, size: fontSize, font, color: rgb(0, 0, 0) });
+    const labels = [
+      ["Name", name],
+      ["Date of Birth", dob],
+      ["Email", email],
+      ["Mobile Number", mobile],
+      ["Relation", relation],
+      ["Address", address],
+      ["Education", education],
+      ["Occupation", occupation],
+      ["Father's Name", father],
+      ["Mother's Name", mother],
+      ["Height", height],
+      ["Weight", weight],
+      ["Blood Group", blood],
+      ["Marital Status", marital],
+      ["Hobbies", hobbies],
+    ];
+
+    // Draw rows
+    labels.forEach(([label, value]) => {
+      page.drawText(label, { x: startX, y, size: fontSize, font: fontBold, color: rgb(0, 0, 0) });
       page.drawText(":", { x: colonX, y, size: fontSize, font, color: rgb(0, 0, 0) });
       page.drawText(value || "-", { x: valueX, y, size: fontSize, font, color: rgb(0, 0, 0) });
+      y -= lineGap;
+    });
 
-      y -= lineHeight;
-    };
-
-    // ✅ Add biodata fields
-    drawText("Name", name, true);
-    drawText("Date of Birth", dob);
-    drawText("Email", email);
-    drawText("Mobile Number", mobileNumber);
-    drawText("Relation", relation);
-    drawText("Address", address);
-    drawText("Education", education);
-    drawText("Occupation", occupation);
-    drawText("Father's Name", fatherName);
-    drawText("Mother's Name", motherName);
-    drawText("Height", height);
-    drawText("Weight", weight);
-    drawText("Blood Group", bloodGroup);
-    drawText("Marital Status", maritalStatus);
-    drawText("Hobbies", hobbies);
-
-    // ✅ Embed photo if available
-    if (photo) {
+    // Add image (if provided)
+    if (imageBase64) {
       try {
-        const imgBytes = Uint8Array.from(atob(photo), (c) => c.charCodeAt(0));
-        const img = await pdfDoc.embedJpg(imgBytes);
-        const dims = img.scale(0.5);
-
-        page.drawImage(img, {
-          x: 1800,
-          y: pageHeight - 700,
-          width: dims.width,
-          height: dims.height,
-        });
-      } catch (err) {
-        console.error("Image embedding failed:", err);
+        const imageBytes = Buffer.from(imageBase64, "base64");
+        const img = (await pdfDoc.embedPng(imageBytes).catch(() => null)) 
+                 || (await pdfDoc.embedJpg(imageBytes).catch(() => null));
+        if (img) {
+          const imgDims = img.scale(0.5);
+          page.drawImage(img, {
+            x: 1700,
+            y: 1200,
+            width: imgDims.width,
+            height: imgDims.height,
+          });
+        }
+      } catch {
+        console.warn("Image embedding failed.");
       }
     }
 
-    // ✅ Save PDF
     const pdfBytes = await pdfDoc.save();
 
-    // ✅ Wrap in Buffer for NextResponse
-    return new NextResponse(Buffer.from(pdfBytes), {
+    return new NextResponse(pdfBytes, {
+      status: 200,
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": "attachment; filename=biodata.pdf",
       },
     });
-  } catch (error) {
-    console.error("PDF generation error:", error);
-    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+
+  } catch (err) {
+    console.error("PDF generation failed:", err);
+    return NextResponse.json({ error: "PDF generation failed" }, { status: 500 });
   }
 }
