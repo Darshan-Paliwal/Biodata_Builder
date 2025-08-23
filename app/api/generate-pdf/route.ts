@@ -37,7 +37,9 @@ const formatTime = (timeStr?: string) => {
   if (Number.isNaN(h) || Number.isNaN(m)) return timeStr;
   const h12 = h % 12 || 12;
   const ampm = h >= 12 ? "PM" : "AM";
-  return `${h12.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")} ${ampm}`;
+  return `${h12.toString().padStart(2, "0")}:${m
+    .toString()
+    .padStart(2, "0")} ${ampm}`;
 };
 
 export async function POST(req: Request) {
@@ -46,7 +48,7 @@ export async function POST(req: Request) {
     const formData = body?.formData ?? {};
 
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([2400, 1800]);
+    const page = pdfDoc.addPage([2400, 1800]); // large canvas
     const { width, height } = page.getSize();
 
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
@@ -55,10 +57,14 @@ export async function POST(req: Request) {
     // ---------- Pre-embed image ----------
     let embeddedImage: any = null;
     let hasImage = false;
+
+    const imageX = 1550;
+    const imageY = 500;
+
     let imgWidth = 0;
     let imgHeight = 0;
-    const imageX = width - 550; // right side placement
-    const imageY = height - 900;
+    let imageTop = 0;
+    let imageBottom = 0;
 
     if (formData.image) {
       const base64: string = String(formData.image);
@@ -73,9 +79,12 @@ export async function POST(req: Request) {
       }
 
       if (embeddedImage) {
-        const dims = embeddedImage.scale(0.5);
+        // 🔥 Increase image size to give text margin
+        const dims = embeddedImage.scale(0.8); // was 0.65
         imgWidth = dims.width;
         imgHeight = dims.height;
+        imageTop = imageY + imgHeight;
+        imageBottom = imageY;
         hasImage = true;
       }
     }
@@ -99,15 +108,13 @@ export async function POST(req: Request) {
     const colonX = 650;
     const valueX = colonX + 30;
     const rightMargin = 100;
+    const gutter = 40;
 
-    // function to calculate available text width (avoid image area)
     const getValueMaxWidth = () => {
-      if (
-        hasImage &&
-        yPos <= imageY + imgHeight &&
-        yPos >= imageY - 50 // allow small buffer
-      ) {
-        return imageX - 50 - valueX; // wrap text before hitting image
+      const withinImageBand = hasImage && yPos <= imageTop && yPos >= imageBottom;
+      if (withinImageBand) {
+        const narrow = imageX - gutter - valueX;
+        return Math.max(200, narrow);
       }
       return width - rightMargin - valueX;
     };
@@ -130,9 +137,27 @@ export async function POST(req: Request) {
       const v = (value ?? "").trim();
       if (!v) return;
 
-      page.drawText("•", { x: bulletX, y: yPos, size: 32, font, color: rgb(0, 0, 0) });
-      page.drawText(label, { x: labelX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
-      page.drawText(":", { x: colonX, y: yPos, size: 32, font: fontBold, color: rgb(0, 0, 0) });
+      page.drawText("•", {
+        x: bulletX,
+        y: yPos,
+        size: 32,
+        font,
+        color: rgb(0, 0, 0),
+      });
+      page.drawText(label, {
+        x: labelX,
+        y: yPos,
+        size: 32,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
+      page.drawText(":", {
+        x: colonX,
+        y: yPos,
+        size: 32,
+        font: fontBold,
+        color: rgb(0, 0, 0),
+      });
       drawValueLines(v);
     };
 
@@ -147,6 +172,7 @@ export async function POST(req: Request) {
       const rel = (relation ?? "").trim();
       const num = (number ?? "").trim();
       if (!rel && !num) return;
+
       const label = rel ? `Mobile Number (${rel})` : "Mobile Number";
       drawField(label, num);
     };
@@ -169,10 +195,13 @@ export async function POST(req: Request) {
     drawSibling();
     drawField("Residence", formData.residence);
     drawField("Permanent Address", formData.permanentAddress);
+
     drawMobile(formData.mobileRelation1, formData.mobileNumber1);
     drawMobile(formData.mobileRelation2, formData.mobileNumber2);
 
-    const extra: Array<{ label?: string; value?: string }> = Array.isArray(formData.extraFields)
+    const extra: Array<{ label?: string; value?: string }> = Array.isArray(
+      formData.extraFields
+    )
       ? formData.extraFields
       : [];
     for (const item of extra) {
@@ -193,7 +222,9 @@ export async function POST(req: Request) {
 
     // ---------- Return PDF ----------
     const pdfBytes = await pdfDoc.save();
-    return new NextResponse(Buffer.from(pdfBytes), {
+    const pdfBuffer = Buffer.from(pdfBytes); // ✅ FIX for Netlify
+
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
@@ -202,6 +233,9 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("PDF generation error:", err);
-    return NextResponse.json({ error: "Failed to generate PDF" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate PDF" },
+      { status: 500 }
+    );
   }
 }
