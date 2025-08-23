@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import getStream from "get-stream";
 
-// Force server runtime so Netlify doesn’t try to bundle client-side
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
@@ -46,8 +45,8 @@ export async function POST(req: NextRequest) {
 
     // === Layout constants ===
     const labelX = 70;
-    const colonX = 200;
-    const valueX = 220;
+    const colonX = 220; // <-- fixed colon column
+    const valueX = 240; // <-- value starts right after colon
     let y = 120;
     const lineGap = 25;
 
@@ -55,12 +54,12 @@ export async function POST(req: NextRequest) {
     const drawRow = (label: string, value?: string) => {
       if (!value) return;
       doc.fontSize(12).text(label, labelX, y);
-      doc.text(":", colonX, y);
+      doc.text(":", colonX, y); // all colons aligned here
       doc.text(value, valueX, y);
       y += lineGap;
     };
 
-    // Left section fields
+    // Personal Details
     drawRow("Full Name", fullName);
     drawRow("Date of Birth", dob);
     drawRow("Place of Birth", pob);
@@ -75,15 +74,18 @@ export async function POST(req: NextRequest) {
     drawRow("Occupation", occupation);
     drawRow("Income", income);
 
+    // Family
     drawRow("Father's Name", fatherName);
     drawRow("Father's Occupation", fatherOccupation);
     drawRow("Mother's Name", motherName);
     drawRow("Mother's Occupation", motherOccupation);
 
+    // Address + Mobile
     drawRow("Address", address);
     drawRow("Mobile Number", mobileNumber);
     drawRow("Relation with Mobile Number Person", relationWithPerson);
 
+    // Extras
     drawRow("Hobbies", hobbies);
     drawRow("Expectations", expectations);
 
@@ -93,7 +95,6 @@ export async function POST(req: NextRequest) {
         const res = await fetch(imageUrl);
         const buffer = Buffer.from(await res.arrayBuffer());
 
-        // Place image at top-right
         const imgX = 380;
         const imgY = 120;
         const imgW = 150;
